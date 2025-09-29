@@ -1,0 +1,59 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#218085" />
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self' https://weworkremotely.com https://remotive.com https://jobicy.com https://himalayas.app https://remoteok.com https://www.workingnomads.com https://nodesk.co https://remote.co; font-src 'self' data:; object-src 'none'; base-uri 'self'; form-action 'self'">
+    <link rel="manifest" href="/manifest.webmanifest" />
+    <title>JobFlow PWA</title>
+    <script>
+      // Feature flags (toggle via console; then reload)
+      window.JobFlowConfig = Object.assign({
+        enableDiscovery: false,
+        enableQualification: false,
+        enableKanban: false,
+        enableAnalytics: false,
+        enableImport: true,
+        production: false
+      }, window.JobFlowConfig || {});
+    </script>
+    <style>
+      :root { --bg: #0b1020; --card: #121a2b; --fg: #e5e7eb; --acc: #0ea5e9; }
+      html, body { height: 100%; }
+      body { margin:0; font: 14px/1.4 system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell, Noto Sans, sans-serif; background: var(--bg); color: var(--fg); }
+      header { padding: 24px; border-bottom: 1px solid #1f2a44; }
+      main { padding: 24px; max-width: 900px; margin: 0 auto; }
+      .card { background: var(--card); border: 1px solid #1f2a44; border-radius: 12px; padding: 16px; }
+      .row { display:flex; gap: 12px; align-items:center; flex-wrap: wrap; }
+      .btn { background: var(--acc); color: #001018; border: none; padding: 8px 12px; border-radius: 8px; cursor: pointer; font-weight: 600; }
+      code { background: #0c1426; padding: 2px 6px; border-radius: 6px; }
+      a { color: var(--acc); }
+    </style>
+  </head>
+  <body>
+    <header class="row">
+      <h1 style="margin:0">JobFlow PWA</h1>
+      <span id="sw-status" style="opacity:.8"></span>
+    </header>
+    <main>
+      <section class="card">
+        <h2 style="margin-top:0">Welcome</h2>
+        <p>Fast, offline‑capable job pipeline: Discovery → Qualification → Kanban.</p>
+        <p style="opacity:.8">Feature flags: <code>window.JobFlowConfig</code> (all default OFF).</p>
+        <div class="row">
+          <input type="file" id="csvInput" accept=".csv" />
+          <button id="discover" class="btn">Discover Roles (RSS)</button>
+          <button id="export" class="btn">Export CSV</button>
+          <button id="seed" class="btn">Seed Sample</button>
+          <button id="clear" class="btn" style="background:#f59e0b;color:#130b00">Clear DB</button>
+        </div>
+        <p style="margin-top:12px">Open <code>TODO.md</code> for the backlog.</p>
+        <p id="count" style="margin:0"></p>
+        <div id="importSummary" style="opacity:.8;margin-top:8px"></div>
+        <table id="roles" style="width:100%;margin-top:12px"></table>
+      </section>
+    </main>
+    <script type="module" src="/src/main.js"></script>
+  </body>
+  </html>
