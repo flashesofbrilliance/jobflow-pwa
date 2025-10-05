@@ -1,19 +1,15 @@
 // @ts-check
 const { test, expect } = require('@playwright/test');
 
-test('dashboard renders cards and opens Job Detail', async ({ page }) => {
-  await page.addInitScript(() => {
-    window.JobFlowConfig = Object.assign({}, window.JobFlowConfig || {}, { enableDashboard: true });
-  });
+test('kanban renders cards and opens Qualification modal', async ({ page }) => {
+  page.on('console', (msg) => console.log('console:', msg.type(), msg.text()));
+  page.on('pageerror', (err) => console.error('pageerror:', err));
   await page.goto('/');
-  await expect(page.getByRole('button', { name: 'Seed Sample' })).toBeVisible();
-  await page.getByRole('button', { name: 'Seed Sample' }).click();
-  await expect(page.locator('#dashboardSection')).toBeVisible();
-  const cards = page.locator('#dashboardSection .job-card');
+  await page.waitForSelector('.kanban .cardk', { timeout: 15000 });
+  const cards = page.locator('.kanban .cardk');
   await expect(cards.first()).toBeVisible();
   await cards.first().click();
-  const modal = page.locator('#jobDetailModal');
+  const modal = page.locator('#qual-modal');
   await expect(modal).toBeVisible();
-  await expect(page.getByText('Job Details')).toBeVisible();
+  await expect(page.getByText('Qualification')).toBeVisible();
 });
-

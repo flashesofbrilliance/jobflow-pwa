@@ -6,14 +6,13 @@ module.exports = defineConfig({
   retries: 0,
   reporter: 'list',
   use: {
-    baseURL: process.env.BASE_URL || 'http://localhost:4173',
+    baseURL: process.env.BASE_URL || 'http://127.0.0.1:4180',
     headless: true,
   },
   webServer: {
-    command: 'npm run preview -- --port=4173 --strictPort',
-    url: 'http://localhost:4173',
-    reuseExistingServer: true,
-    timeout: 60_000,
+    command: 'npm run build && node scripts/preview-static.js --dir dist --port 4180 --host 127.0.0.1',
+    url: 'http://127.0.0.1:4180',
+    reuseExistingServer: false,
+    timeout: 120_000,
   },
 });
-
