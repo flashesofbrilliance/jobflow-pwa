@@ -1,194 +1,251 @@
 <!doctype html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta name="theme-color" content="#218085" />
-    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self' https://weworkremotely.com https://remotive.com https://jobicy.com https://himalayas.app https://remoteok.com https://www.workingnomads.com https://nodesk.co https://remote.co; font-src 'self' data:; object-src 'none'; base-uri 'self'; form-action 'self'">
-    <link rel="manifest" href="/manifest.webmanifest" />
-    <title>JobFlow PWA</title>
-    <script>
-      // Feature flags (toggle via console; then reload)
-      window.JobFlowConfig = Object.assign({
-        enableDiscovery: false,
-        enableQualification: false,
-        enableKanban: false,
-        enableAnalytics: false,
-        enableDashboard: true,
-        enablePlanning: true,
-        enableImport: true,
-        production: false,
-        scoring: {
-          weights: { role:25, sector:25, remote:15, health:15, referral:10, stage:10 },
-          preferences: {
-            sectors: ['ai','ml','platform','developer','fintech','health','product','design'],
-            companyHealth: {
-              'Figma': 0.95,
-              'Grammarly': 0.9,
-              'Perplexity AI': 0.85
-            },
-            referrals: {
-              // Example: 'Company Name': true
-            },
-            companyStage: {
-              'Coinbase': 'public',
-              'Transcarent': 'scaleup'
-            }
-          }
-        }
-      }, window.JobFlowConfig || {});
-    </script>
-    <style>
-      :root { --bg: #0b1020; --card: #121a2b; --fg: #e5e7eb; --acc: #0ea5e9; }
-      html, body { height: 100%; }
-      body { margin:0; font: 14px/1.4 system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell, Noto Sans, sans-serif; background: var(--bg); color: var(--fg); }
-      header { padding: 24px; border-bottom: 1px solid #1f2a44; }
-      main { padding: 24px; max-width: 900px; margin: 0 auto; }
-      .card { background: var(--card); border: 1px solid #1f2a44; border-radius: 12px; padding: 16px; }
-      .row { display:flex; gap: 12px; align-items:center; flex-wrap: wrap; }
-      .btn { background: var(--acc); color: #001018; border: none; padding: 8px 12px; border-radius: 8px; cursor: pointer; font-weight: 600; }
-      code { background: #0c1426; padding: 2px 6px; border-radius: 6px; }
-      a { color: var(--acc); }
-    </style>
-  </head>
-  <body>
-    <header class="row">
-      <h1 style="margin:0">JobFlow PWA</h1>
-      <span id="sw-status" style="opacity:.8"></span>
-    </header>
-    <main>
-      <section class="card">
-        <h2 style="margin-top:0">Welcome</h2>
-        <p>Fast, offline‑capable job pipeline: Discovery → Qualification → Kanban.</p>
-        <p style="opacity:.8">Feature flags: <code>window.JobFlowConfig</code> (all default OFF).</p>
-        <div class="row">
-          <input type="file" id="csvInput" accept=".csv" />
-          <button id="discover" class="btn">Discover Roles (RSS)</button>
-          <button id="export" class="btn">Export CSV</button>
-          <button id="seed" class="btn">Seed Sample</button>
-          <button id="clear" class="btn" style="background:#f59e0b;color:#130b00">Clear DB</button>
-        </div>
-        <p style="margin-top:12px">Open <code>TODO.md</code> for the backlog. Last discovery: <span id="lastDisc" style="opacity:.8">–</span></p>
-        <p id="count" style="margin:0"></p>
-        <div id="importSummary" style="opacity:.8;margin-top:8px"></div>
-        <table id="roles" style="width:100%;margin-top:12px"></table>
-      </section>
-      <section class="card">
-        <h3 style="margin-top:0">NSM Panel (Local)</h3>
-        <p id="nsm-ttq">TtQ (7/30d): –</p>
-        <p id="nsm-csv">CSV success rate (last): –</p>
-        <p id="nsm-qual">Qualification modal usage (session): –</p>
-        <p id="nsm-moves">Kanban moves coverage: –</p>
-        <div class="row">
-          <button id="backupJson" class="btn">Export JSON Backup</button>
-        </div>
-      </section>
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; connect-src 'self'; img-src 'self' data:; worker-src 'self'">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#0f172a">
+  <link rel="manifest" href="manifest.json">
+  <title>JobFlow — Discovery • Qualification • Kanban • Archive • Analytics</title>
+  <style>
+    :root {
+      --bg: #0f172a; --panel: #111827; --muted:#374151; --text:#e5e7eb; --sub:#9ca3af;
+      --p0:#FF5459; --p1:#22C55E; --p2:#F59E0B; --p3:#6B7280; --accent:#60a5fa; --warn:#f59e0b; --ok:#10b981; --danger:#ef4444;
+      --card:#111827; --card-hover:#1f2937; --col:#0b1220; --border:#1f2937; --badge:#0b1220;
+    }
+    * { box-sizing: border-box; }
+    html, body { height: 100%; }
+    body {
+      margin:0; font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji","Segoe UI Emoji";
+      background: var(--bg); color: var(--text);
+    }
+    header {
+      display:flex; align-items:center; justify-content:space-between;
+      padding:12px 16px; border-bottom:1px solid var(--border); background: linear-gradient(180deg,#0f172a,#0d1426);
+      position:sticky; top:0; z-index:5;
+    }
+    .brand { font-weight:700; letter-spacing:.3px; }
+    .caps { font-size:12px; color:var(--sub); letter-spacing:.12em; text-transform:uppercase; }
+    .row { display:flex; gap:8px; align-items:center; }
+    .pill { padding:6px 10px; border:1px solid var(--border); border-radius:999px; background:var(--panel); color:var(--sub); font-size:12px; }
+    nav { display:flex; gap:6px; }
+    nav button {
+      background:transparent; color:var(--sub); border:1px solid var(--border); padding:8px 12px; border-radius:8px; cursor:pointer;
+    }
+    nav button.active { color:var(--text); border-color:var(--accent); box-shadow: inset 0 0 0 1px var(--accent); }
+    main { padding:16px; }
+    .hidden { display:none !important; }
+    /* Discovery */
+    .discovery { display:grid; gap:16px; grid-template-columns: 1fr; }
+    .card { background:var(--panel); border:1px solid var(--border); border-radius:12px; padding:14px; }
+    .card h2 { margin:0 0 8px 0; font-size:16px; }
+    .dropzone {
+      border:1.5px dashed var(--muted); border-radius:12px; padding:16px; text-align:center; color:var(--sub);
+    }
+    .dropzone.drag { border-color:var(--accent); color:var(--text); }
+    .muted { color:var(--sub); font-size:12px; }
+    .badges { display:flex; gap:6px; flex-wrap:wrap; }
+    .badge { background:var(--badge); border:1px solid var(--border); color:var(--sub); font-size:11px; border-radius:999px; padding:4px 8px; }
+    /* Kanban */
+    .kanban { display:grid; grid-template-columns: repeat(5, minmax(220px,1fr)); gap:12px; align-items:start; }
+    .column { background:var(--col); border:1px solid var(--border); border-radius:12px; min-height:300px; padding:10px; }
+    .column h3 { margin:0 0 8px 0; font-size:14px; display:flex; justify-content:space-between; align-items:center; color:var(--sub); }
+    .lane { display:flex; flex-direction:column; gap:8px; min-height:180px; }
+    .cardk {
+      background:var(--card); border:1px solid var(--border); border-radius:10px; padding:10px; cursor:grab;
+    }
+    .cardk:hover { background:var(--card-hover); }
+    .title { font-weight:600; }
+    .meta { color:var(--sub); font-size:12px; display:flex; gap:8px; flex-wrap:wrap; margin-top:6px; }
+    .prio { width:10px; height:10px; border-radius:2px; display:inline-block; vertical-align:middle; }
+    .deadline.bad { color:var(--danger); } .deadline.mid { color:var(--warn); } .deadline.ok { color:var(--ok); }
+    /* Modal */
+    .modal { position:fixed; inset:0; display:none; align-items:center; justify-content:center; background:rgba(2,6,23,.7); z-index:50; }
+    .modal.show { display:flex; }
+    .sheet { width:min(720px, 92vw); background:var(--panel); border:1px solid var(--border); border-radius:12px; padding:16px; }
+    .rowgrid { display:grid; grid-template-columns: 1fr 1fr; gap:12px; }
+    .sheet h3 { margin:0 0 8px 0; }
+    label { font-size:12px; color:var(--sub); display:block; margin-bottom:6px; }
+    input[type="text"], textarea, select, input[type="number"], input[type="date"] {
+      width:100%; padding:8px; background:#0b1220; color:var(--text); border:1px solid var(--border); border-radius:8px;
+    }
+    textarea { min-height:90px; resize:vertical; }
+    .actions { display:flex; gap:8px; justify-content:flex-end; margin-top:12px; }
+    .btn { padding:10px 12px; border-radius:8px; border:1px solid var(--border); background:#0b1220; color:var(--text); cursor:pointer; }
+    .btn.primary { border-color:var(--accent); box-shadow: inset 0 0 0 1px var(--accent); }
+    .btn.danger { border-color:#ef4444; box-shadow: inset 0 0 0 1px #ef4444; }
+    .chips { display:flex; gap:6px; flex-wrap:wrap; }
+    .chip { padding:6px 8px; border:1px solid var(--border); border-radius:999px; cursor:pointer; color:var(--sub); }
+    .chip.on { color:var(--text); border-color:var(--accent); box-shadow: inset 0 0 0 1px var(--accent); }
+    /* Archive/Analytics */
+    .list { display:flex; flex-direction:column; gap:8px; }
+    .bar { height:10px; background:var(--border); border-radius:6px; overflow:hidden; }
+    .bar > span { display:block; height:100%; background:var(--accent); }
+    footer { padding:12px 16px; color:var(--sub); border-top:1px solid var(--border); }
+    @media (max-width: 1060px) { .kanban { grid-template-columns: repeat(2,minmax(220px,1fr)); } }
+    @media (max-width: 720px) { .kanban { grid-template-columns: 1fr; } .rowgrid { grid-template-columns: 1fr; } }
+  </style>
+  <link rel="icon" href="icons/192.png">
+  <link rel="apple-touch-icon" href="icons/192.png">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+</head>
+<body>
+  <header>
+    <div class="row">
+      <div class="brand">JobFlow</div>
+      <div class="pill caps" id="cap-status">Offline-first • Ready</div>
+    </div>
+    <nav>
+      <button data-view="discovery" class="active">Discovery</button>
+      <button data-view="kanban">Kanban</button>
+      <button data-view="archive">Archive</button>
+      <button data-view="analytics">Analytics</button>
+      <button data-view="about">About</button>
+    </nav>
+  </header>
 
-      <!-- Qualification Modal -->
-      <dialog id="qualModal">
-        <form method="dialog" id="qualForm">
-          <h3 id="qualTitle">Qualify Role</h3>
-          <div class="row">
-            <label>Decision</label>
-            <div>
-              <label><input type="radio" name="decision" value="accept" checked> Accept</label>
-              <label><input type="radio" name="decision" value="reject"> Reject</label>
-            </div>
-          </div>
-          <div class="row">
-            <label>Fit</label>
-            <select id="fitCat">
-              <option>Strong</option>
-              <option>Good</option>
-              <option>Stretch</option>
-              <option>Poor</option>
-            </select>
-          </div>
-          <div class="row">
-            <label>Confidence</label>
-            <input type="range" min="0" max="100" value="60" id="confidence" />
-          </div>
-          <div class="row">
-            <label>Objections</label>
-            <input type="text" id="tags" placeholder="e.g., comp, location, role-scope" />
-          </div>
-          <div class="row">
-            <label>Notes</label>
-            <textarea id="notes" rows="3" placeholder="Rationale / objections"></textarea>
-          </div>
-          <menu class="row" style="justify-content:flex-end">
-            <button id="qualCancel" value="cancel" class="btn" style="background:#1f2a44;color:#e5e7eb">Cancel (Esc)</button>
-            <button id="qualSave" value="default" class="btn">Save (Enter)</button>
-          </menu>
-          <p style="opacity:.7">Hotkeys: A=Accept, R=Reject, Esc=Close</p>
-        </form>
-      </dialog>
-    </main>
-    <main>
-      <section class="card" id="dashboardSection" style="margin-top:16px;display:none">
-        <h2 style="margin-top:0">Priority Dashboard</h2>
-        <p>Opportunities ranked by composite score (Fit × Confidence × Financial × Growth × Referral).</p>
-        <div class="row" style="gap:16px; align-items:flex-start">
-          <div style="flex:1; min-width:250px">
-            <h3 style="color:#ef4444">High (70–100)</h3>
-            <div id="dashHigh"></div>
-          </div>
-          <div style="flex:1; min-width:250px">
-            <h3 style="color:#f59e0b">Medium (40–69)</h3>
-            <div id="dashMed"></div>
-          </div>
-          <div style="flex:1; min-width:250px">
-            <h3 style="color:#22c55e">Low (&lt;40)</h3>
-            <div id="dashLow"></div>
-          </div>
+  <main>
+    <section id="view-discovery" class="discovery">
+      <div class="card">
+        <h2>Import CSV (offline-capable)</h2>
+        <div id="dropzone" class="dropzone">
+          Drop CSV here or
+          <label class="btn" style="margin-left:6px; display:inline-block;">
+            Select File
+            <input type="file" id="csvFile" accept=".csv" style="display:none;">
+          </label>
+          <div class="muted" style="margin-top:6px;">Headers: company,role,job_url,status,priority_score,fit_score,deadline,notes</div>
         </div>
-      </section>
+        <div class="row" style="justify-content:space-between; margin-top:6px;">
+          <div id="import-result" class="muted"></div>
+          <a class="btn" href="csv_templates/discovery_import_template.csv" download>Download template</a>
+        </div>
+      </div>
+      <div class="card">
+        <h2>Feeds (disabled under strict CSP)</h2>
+        <div class="muted">Strict CSP uses connect-src 'self', so external RSS/API fetches are disabled in V0. CSV import remains fully supported offline.</div>
+        <div class="badges" style="margin-top:8px;">
+          <span class="badge">WeWorkRemotely</span>
+          <span class="badge">Himalayas</span>
+          <span class="badge">Remotive</span>
+        </div>
+      </div>
+    </section>
 
-      <section class="card" id="planningSection" style="margin-top:16px;display:none">
-        <h2 style="margin-top:0">Backward Planning</h2>
-        <div class="row">
-          <label>Target Offer Date <input type="date" id="planTargetDate"></label>
-          <label>Target Interviews <input type="number" id="planTargetInterviews" min="1" max="20" value="5" style="width:80px"></label>
+    <section id="view-kanban" class="hidden">
+      <div class="kanban" id="kanban"></div>
+    </section>
+
+    <section id="view-archive" class="hidden">
+      <div class="card">
+        <h2>Archive & Learning</h2>
+        <div class="row" style="gap:8px; flex-wrap:wrap; margin-bottom:8px;">
+          <select id="filter-objection">
+            <option value="">All objections</option>
+            <option>RoleMismatch</option><option>Location</option><option>Compensation</option><option>Stage</option><option>Timing</option><option>Culture</option><option>Health</option>
+          </select>
+          <input type="number" id="filter-confidence" placeholder="Min confidence (0-100)" min="0" max="100">
+          <input type="date" id="filter-from">
+          <input type="date" id="filter-to">
+          <button class="btn" id="apply-archive-filters">Apply</button>
         </div>
-        <div class="row">
-          <label>Cold Callback % <input type="number" id="planCbCold" min="1" max="50" value="8" style="width:80px"></label>
-          <label>Warm Callback % <input type="number" id="planCbWarm" min="10" max="80" value="40" style="width:80px"></label>
-          <label>Strong Callback % <input type="number" id="planCbStrong" min="20" max="90" value="60" style="width:80px"></label>
+        <div class="list" id="archive-list"></div>
+      </div>
+    </section>
+
+    <section id="view-analytics" class="hidden">
+      <div class="card">
+        <h2>Conversion Funnel</h2>
+        <div id="funnel"></div>
+      </div>
+      <div class="card">
+        <h2>Objection Analysis</h2>
+        <div id="objections"></div>
+      </div>
+      <div class="card">
+        <h2>Source Quality (CSV/import)</h2>
+        <div id="sources"></div>
+      </div>
+    </section>
+
+    <section id="view-about" class="hidden">
+      <div class="card">
+        <h2>About & Shortcuts</h2>
+        <div class="muted">
+          Keyboard: A=Accept, R=Reject, E=Edit, Esc=Close. Drag cards between columns; all updates persist to IndexedDB immediately. Works offline after first load.
         </div>
-        <div class="row" style="margin-top:8px">
-          <button id="planSave" class="btn">Save Plan</button>
-        </div>
-        <div style="margin-top:12px">
-          <p>Weekly Targets: <span id="weeklyCold">–</span> cold, <span id="weeklyWarm">–</span> warm. Total Apps Needed: <span id="totalApps">–</span></p>
-          <div>
-            <div style="margin:6px 0">Cold Progress: <button id="coldDec" class="btn" style="padding:2px 6px;margin-right:6px;background:#1f2a44;color:#e5e7eb">-</button><strong id="progColdVal">0</strong><button id="coldInc" class="btn" style="padding:2px 6px;margin-left:6px">+</button>
-              <div style="height:8px;background:#1f2a44;border-radius:8px"><div id="progCold" style="height:8px;background:#0ea5e9;width:0%;border-radius:8px"></div></div>
-            </div>
-            <div style="margin:6px 0">Warm Progress: <button id="warmDec" class="btn" style="padding:2px 6px;margin-right:6px;background:#1f2a44;color:#e5e7eb">-</button><strong id="progWarmVal">0</strong><button id="warmInc" class="btn" style="padding:2px 6px;margin-left:6px">+</button>
-              <div style="height:8px;background:#1f2a44;border-radius:8px"><div id="progWarm" style="height:8px;background:#8b5cf6;width:0%;border-radius:8px"></div></div>
-            </div>
-            <div style="margin-top:6px"><button id="progUndo" class="btn" style="background:#1f2a44;color:#e5e7eb">Undo Last</button></div>
+      </div>
+    </section>
+  </main>
+
+  <div id="qual-modal" class="modal" role="dialog" aria-modal="true" aria-labelledby="qm-title">
+    <div class="sheet">
+      <h3 id="qm-title">Qualification</h3>
+      <div class="rowgrid">
+        <div>
+          <label>Decision</label>
+          <div class="row">
+            <button class="btn" id="qm-accept">Accept</button>
+            <button class="btn danger" id="qm-reject">Reject</button>
           </div>
         </div>
-      </section>
-    </main>
-    
-    <!-- Job Detail Modal -->
-    <dialog id="jobDetailModal" style="border:none;border-radius:12px;max-width:560px;width:90%;padding:0;background:#121a2b;color:#e5e7eb">
-      <form method="dialog" style="margin:0">
-        <header style="padding:16px 16px 8px 16px;border-bottom:1px solid #1f2a44;display:flex;align-items:center;justify-content:space-between">
-          <h3 style="margin:0;font-size:16px">Job Details</h3>
-          <button id="jobDetailClose" value="cancel" style="background:#1f2a44;color:#e5e7eb;border:none;border-radius:8px;padding:6px 10px;cursor:pointer">Close</button>
-        </header>
-        <div id="jobDetailBody" style="padding:16px"></div>
-        <footer style="display:flex;gap:8px;justify-content:flex-end;padding:12px 16px;border-top:1px solid #1f2a44">
-          <button id="jobDetailResearch" value="cancel" style="background:#1f2a44;color:#e5e7eb;border:none;border-radius:8px;padding:6px 10px;cursor:pointer">Research</button>
-          <button id="jobDetailDelete" value="cancel" style="background:#b91c1c;color:#fff;border:none;border-radius:8px;padding:6px 10px;cursor:pointer">Delete</button>
-          <button id="jobDetailSave" value="default" class="btn">Save</button>
-        </footer>
-      </form>
-    </dialog>
+        <div>
+          <label>Fit Category</label>
+          <select id="qm-fit">
+            <option>Strong</option><option>Good</option><option>Stretch</option><option>Poor</option>
+          </select>
+        </div>
+        <div>
+          <label>Objections</label>
+          <div id="qm-objs" class="chips"></div>
+        </div>
+        <div>
+          <label>Exclusions (deal-breakers)</label>
+          <div id="qm-excls" class="chips"></div>
+        </div>
+        <div>
+          <label>Confidence (0-100)</label>
+          <input type="number" id="qm-confidence" min="0" max="100" value="70">
+        </div>
+        <div>
+          <label>Deadline</label>
+          <input type="date" id="qm-deadline">
+        </div>
+        <div style="grid-column:1 / -1;">
+          <label>Auto-briefing</label>
+          <textarea id="qm-brief"></textarea>
+        </div>
+      </div>
+      <div class="actions">
+        <button class="btn" id="qm-cancel">Close (Esc)</button>
+        <button class="btn primary" id="qm-save">Save</button>
+      </div>
+    </div>
+  </div>
 
-    <script type="module" src="/src/main.js"></script>
-  </body>
-  </html>
+  <!-- CSV Import Wizard Modal -->
+  <div id="csv-modal" class="modal" role="dialog" aria-modal="true" aria-labelledby="csvm-title">
+    <div class="sheet">
+      <h3 id="csvm-title">CSV Import Wizard</h3>
+      <div id="csvm-step" class="muted" style="margin:4px 0 10px 0;">Step 1 of 3 — Map headers</div>
+      <div id="csvm-body"></div>
+      <div id="csvm-error" class="muted" style="color:#ef4444; margin-top:8px;"></div>
+      <div class="actions">
+        <button class="btn" id="csvm-cancel">Cancel</button>
+        <button class="btn" id="csvm-back" disabled>Back</button>
+        <button class="btn primary" id="csvm-next">Next</button>
+        <button class="btn primary" id="csvm-import" style="display:none;">Import Selected</button>
+      </div>
+    </div>
+  </div>
+
+  <footer>
+    <span class="muted">Privacy-first. 100% client-side. No trackers. PWA offline.</span>
+  </footer>
+
+  <script type="module" src="./app.js"></script>
+  <noscript>JavaScript required for JobFlow.</noscript>
+  <div id="sw-status" class="muted" style="position:fixed;right:8px;bottom:8px;font-size:11px;"></div>
+</body>
+</html>
