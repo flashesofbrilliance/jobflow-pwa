@@ -1,0 +1,489 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>JobFlow - Intelligent Application Tracking with Discovery</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="manifest" href="data:application/json;base64,ewogICJuYW1lIjogIkpvYkZsb3ciLAogICJzaG9ydF9uYW1lIjogIkpvYkZsb3ciLAogICJkZXNjcmlwdGlvbiI6ICJJbnRlbGxpZ2VudCBKb2IgQXBwbGljYXRpb24gVHJhY2tpbmciLAogICJzdGFydF91cmwiOiAiLiIsCiAgImRpc3BsYXkiOiAic3RhbmRhbG9uZSIsCiAgImJhY2tncm91bmRfY29sb3IiOiAiI2ZjZmNmOSIsCiAgInRoZW1lX2NvbG9yIjogIiMyMTgwOGQiLAogICJpY29ucyI6IFsKICAgIHsKICAgICAgInNyYyI6ICJkYXRhOmltYWdlL3N2Zyt4bWw7YmFzZTY0LFBITjJaeUI0Yld4dWN6MGlhSFIwY0RvdkwzZDNkeTUzTXk1dmNtY3ZNakF3TUM5emRtY2lJSGRwWkhSb1BTSTFNakVpSUdobGFXZG9kRDBpTlRJeElpQm1hV3hzUFNJak1qRTRNRGhrSWo0OGNtVmpkQ0IzYVdSMGFEMGlOVEpvU1NJZ2FHVnBaMmgwUFNJMU1qRWlJR1pwYkd3OUlpTXlNVGd3T0dRaUlISjRQU0kxSWl3K1BDOXlaV04wUGp3dmMzWm5QZz09IiwKICAgICAgInNpemVzIjogIjUxMng1MTIiLAogICAgICAidHlwZSI6ICJpbWFnZS9zdmcreG1sIgogICAgfQogIF0KfQ==" />
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+    <div class="app">
+        <!-- Header -->
+        <header class="header">
+            <div class="container">
+                <div class="header-content">
+                    <div class="logo-section">
+                        <h1 class="logo">JobFlow</h1>
+                        <span class="tagline">Intelligent Application Tracking</span>
+                    </div>
+                    <div class="header-stats">
+                        <div class="stat-item">
+                            <span class="stat-value" id="discovered-count">0</span>
+                            <span class="stat-label">Discovered</span>
+                        </div>
+                        <div class="stat-item">
+                            <span class="stat-value" id="qualified-count">0</span>
+                            <span class="stat-label">Qualified</span>
+                        </div>
+                        <div class="stat-item">
+                            <span class="stat-value" id="active-count">5</span>
+                            <span class="stat-label">Active</span>
+                        </div>
+                        <div class="stat-item">
+                            <span class="stat-value" id="weeks-left">12</span>
+                            <span class="stat-label">Weeks Left</span>
+                        </div>
+                    </div>
+                    <div class="header-actions">
+                        <button class="btn btn--primary" id="refresh-discovery">🔄 Refresh Discovery</button>
+                        <button class="btn btn--secondary" id="add-job-btn">+ Add Job</button>
+                        <div class="data-actions">
+                            <button class="btn btn--secondary btn--sm" id="export-btn">Export CSV</button>
+                            <input type="file" id="import-file" accept=".csv" style="display: none;">
+                            <button class="btn btn--outline btn--sm" id="import-btn">Import CSV</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <!-- Navigation -->
+        <nav class="nav">
+            <div class="container">
+                <div class="nav-items">
+                    <button class="nav-item active" data-tab="discovery">Discovery Engine</button>
+                    <button class="nav-item" data-tab="dashboard">Priority Dashboard</button>
+                    <button class="nav-item" data-tab="planning">Backward Planning</button>
+                    <button class="nav-item" data-tab="tracking">Workflow Tracker</button>
+                    <button class="nav-item" data-tab="analytics">Analytics</button>
+                </div>
+            </div>
+        </nav>
+
+        <!-- Main Content -->
+        <main class="main">
+            <div class="container">
+                <!-- Discovery Engine Tab -->
+                <div id="discovery" class="tab-content active">
+                    <div class="section-header">
+                        <h2>Discovery Engine</h2>
+                        <p>Automatically discover and qualify job opportunities from multiple free sources</p>
+                    </div>
+                    
+                    <!-- Discovery Controls -->
+                    <div class="discovery-controls card">
+                        <div class="control-row">
+                            <div class="sector-filters">
+                                <label class="form-label">Target Sectors:</label>
+                                <div class="filter-buttons">
+                                    <button class="filter-btn active" data-sector="all">All</button>
+                                    <button class="filter-btn" data-sector="AI/Generative">AI/Generative</button>
+                                    <button class="filter-btn" data-sector="HealthTech">HealthTech</button>
+                                    <button class="filter-btn" data-sector="FinTech">FinTech</button>
+                                    <button class="filter-btn" data-sector="GTM SaaS">GTM SaaS</button>
+                                </div>
+                            </div>
+                            <div class="score-filter">
+                                <label class="form-label">Minimum Score:</label>
+                                <select id="min-score-filter" class="form-control">
+                                    <option value="0">All Opportunities</option>
+                                    <option value="50">Medium+ (50+)</option>
+                                    <option value="70" selected>High Priority (70+)</option>
+                                </select>
+                            </div>
+                            <div class="bulk-actions">
+                                <button class="btn btn--secondary btn--sm" id="select-all">Select All</button>
+                                <button class="btn btn--primary btn--sm" id="import-selected" disabled>Import Selected</button>
+                                <button class="btn btn--outline btn--sm" id="export-discovered">Export CSV</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Discovery Sources Status -->
+                    <div class="sources-status card">
+                        <h3>Discovery Sources</h3>
+                        <div class="sources-grid">
+                            <div class="source-item" id="source-wwr">
+                                <div class="source-info">
+                                    <span class="source-name">We Work Remotely</span>
+                                    <span class="source-type">RSS</span>
+                                </div>
+                                <div class="source-status">
+                                    <span class="job-count">0 jobs</span>
+                                    <span class="last-updated">Never</span>
+                                </div>
+                            </div>
+                            <div class="source-item" id="source-himalayas">
+                                <div class="source-info">
+                                    <span class="source-name">Himalayas</span>
+                                    <span class="source-type">RSS</span>
+                                </div>
+                                <div class="source-status">
+                                    <span class="job-count">0 jobs</span>
+                                    <span class="last-updated">Never</span>
+                                </div>
+                            </div>
+                            <div class="source-item" id="source-remotive">
+                                <div class="source-info">
+                                    <span class="source-name">Remotive</span>
+                                    <span class="source-type">RSS</span>
+                                </div>
+                                <div class="source-status">
+                                    <span class="job-count">0 jobs</span>
+                                    <span class="last-updated">Never</span>
+                                </div>
+                            </div>
+                            <div class="source-item" id="source-jobicy">
+                                <div class="source-info">
+                                    <span class="source-name">Jobicy</span>
+                                    <span class="source-type">API</span>
+                                </div>
+                                <div class="source-status">
+                                    <span class="job-count">0 jobs</span>
+                                    <span class="last-updated">Never</span>
+                                </div>
+                            </div>
+                            <div class="source-item" id="source-arbeitnow">
+                                <div class="source-info">
+                                    <span class="source-name">Arbeitnow</span>
+                                    <span class="source-type">API</span>
+                                </div>
+                                <div class="source-status">
+                                    <span class="job-count">0 jobs</span>
+                                    <span class="last-updated">Never</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Discovered Opportunities -->
+                    <div class="discovered-opportunities">
+                        <h3>Discovered Opportunities (<span id="total-discovered">0</span>)</h3>
+                        <div id="discovered-jobs-list" class="discovered-jobs-grid">
+                            <!-- Discovered jobs will be rendered here -->
+                        </div>
+                        <div id="discovery-loading" class="loading-state hidden">
+                            <div class="loading-spinner"></div>
+                            <p>Discovering opportunities from multiple sources...</p>
+                        </div>
+                        <div id="discovery-empty" class="empty-state">
+                            <p>No opportunities discovered yet. Click "Refresh Discovery" to start finding jobs!</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Dashboard Tab -->
+                <div id="dashboard" class="tab-content hidden">
+                    <div class="section-header">
+                        <h2>Priority Dashboard</h2>
+                        <p>Opportunities ranked by Fit × Confidence × Financial Health × Growth × Referral Warmth</p>
+                    </div>
+                    
+                    <div class="priority-grid">
+                        <div class="priority-section">
+                            <h3 class="priority-title high">High Priority (70-100)</h3>
+                            <div id="high-priority-jobs" class="jobs-list"></div>
+                        </div>
+                        
+                        <div class="priority-section">
+                            <h3 class="priority-title medium">Medium Priority (40-69)</h3>
+                            <div id="medium-priority-jobs" class="jobs-list"></div>
+                        </div>
+                        
+                        <div class="priority-section">
+                            <h3 class="priority-title low">Low Priority (&lt; 40)</h3>
+                            <div id="low-priority-jobs" class="jobs-list"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Planning Tab -->
+                <div id="planning" class="tab-content hidden">
+                    <div class="section-header">
+                        <h2>Backward Planning Calculator</h2>
+                        <p>Work backwards from your target offer date to determine application volume</p>
+                    </div>
+                    
+                    <div class="planning-grid">
+                        <div class="planning-inputs card">
+                            <h3>Target Goals</h3>
+                            <div class="form-group">
+                                <label class="form-label">Target Offer Date</label>
+                                <input type="date" class="form-control" id="target-date" value="2025-12-15">
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Target Interviews</label>
+                                <input type="number" class="form-control" id="target-interviews" value="5" min="1" max="20">
+                            </div>
+                            <div class="callback-rates">
+                                <h4>Callback Rates</h4>
+                                <div class="form-group">
+                                    <label class="form-label">Cold Applications (%)</label>
+                                    <input type="number" class="form-control" id="callback-cold" value="8" min="1" max="50">
+                                </div>
+                                <div class="form-group">
+                                    <label class="form-label">Warm Referrals (%)</label>
+                                    <input type="number" class="form-control" id="callback-warm" value="40" min="10" max="80">
+                                </div>
+                                <div class="form-group">
+                                    <label class="form-label">Strong Referrals (%)</label>
+                                    <input type="number" class="form-control" id="callback-strong" value="60" min="20" max="90">
+                                </div>
+                            </div>
+                            <button class="btn btn--primary" id="calculate-plan">Calculate Plan</button>
+                        </div>
+                        
+                        <div class="planning-results card">
+                            <h3>Weekly Targets</h3>
+                            <div class="targets-grid">
+                                <div class="target-item">
+                                    <span class="target-value" id="weekly-cold">6</span>
+                                    <span class="target-label">Cold Applications</span>
+                                </div>
+                                <div class="target-item">
+                                    <span class="target-value" id="weekly-warm">2</span>
+                                    <span class="target-label">Warm Referrals</span>
+                                </div>
+                                <div class="target-item">
+                                    <span class="target-value" id="total-needed">75</span>
+                                    <span class="target-label">Total Applications</span>
+                                </div>
+                            </div>
+                            <div class="progress-tracking">
+                                <h4>This Week's Progress</h4>
+                                <div class="progress-item">
+                                    <span>Cold Applications: <strong id="week-cold-progress">0</strong>/<span id="week-cold-target">6</span></span>
+                                    <div class="progress-bar">
+                                        <div class="progress-fill" id="cold-progress-fill" style="width: 0%"></div>
+                                    </div>
+                                </div>
+                                <div class="progress-item">
+                                    <span>Warm Referrals: <strong id="week-warm-progress">0</strong>/<span id="week-warm-target">2</span></span>
+                                    <div class="progress-bar">
+                                        <div class="progress-fill" id="warm-progress-fill" style="width: 0%"></div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="timeline-chart card">
+                        <h3>Application Timeline</h3>
+                        <div class="chart-container" style="position: relative; height: 300px;">
+                            <canvas id="timeline-chart"></canvas>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Tracking Tab -->
+                <div id="tracking" class="tab-content hidden">
+                    <div class="section-header">
+                        <h2>Application Workflow Tracker</h2>
+                        <p>Kanban-style workflow to track all applications from research to offer</p>
+                    </div>
+                    
+                    <div class="kanban-board">
+                        <div class="kanban-column" data-status="To Apply">
+                            <h3 class="kanban-title">To Apply <span class="count-badge" id="to-apply-count">0</span></h3>
+                            <div id="to-apply-column" class="kanban-items" ondrop="dropHandler(event)" ondragover="dragOverHandler(event)"></div>
+                        </div>
+                        <div class="kanban-column" data-status="Applied">
+                            <h3 class="kanban-title">Applied <span class="count-badge" id="applied-count">0</span></h3>
+                            <div id="applied-column" class="kanban-items" ondrop="dropHandler(event)" ondragover="dragOverHandler(event)"></div>
+                        </div>
+                        <div class="kanban-column" data-status="Screening">
+                            <h3 class="kanban-title">Screening <span class="count-badge" id="screening-count">0</span></h3>
+                            <div id="screening-column" class="kanban-items" ondrop="dropHandler(event)" ondragover="dragOverHandler(event)"></div>
+                        </div>
+                        <div class="kanban-column" data-status="Interview">
+                            <h3 class="kanban-title">Interview <span class="count-badge" id="interview-count">0</span></h3>
+                            <div id="interview-column" class="kanban-items" ondrop="dropHandler(event)" ondragover="dragOverHandler(event)"></div>
+                        </div>
+                        <div class="kanban-column" data-status="Offer">
+                            <h3 class="kanban-title">Offer <span class="count-badge" id="offer-count">0</span></h3>
+                            <div id="offer-column" class="kanban-items" ondrop="dropHandler(event)" ondragover="dragOverHandler(event)"></div>
+                        </div>
+                        <div class="kanban-column" data-status="Rejected">
+                            <h3 class="kanban-title">Rejected <span class="count-badge" id="rejected-count">0</span></h3>
+                            <div id="rejected-column" class="kanban-items" ondrop="dropHandler(event)" ondragover="dragOverHandler(event)"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Analytics Tab -->
+                <div id="analytics" class="tab-content hidden">
+                    <div class="section-header">
+                        <h2>Analytics Dashboard</h2>
+                        <p>Track performance metrics and optimize your application strategy</p>
+                    </div>
+                    
+                    <div class="analytics-grid">
+                        <div class="metrics-overview card">
+                            <h3>Key Metrics</h3>
+                            <div class="metrics-grid">
+                                <div class="metric-item">
+                                    <span class="metric-value" id="total-applications">0</span>
+                                    <span class="metric-label">Total Applications</span>
+                                </div>
+                                <div class="metric-item">
+                                    <span class="metric-value" id="callback-rate">0%</span>
+                                    <span class="metric-label">Overall Callback Rate</span>
+                                </div>
+                                <div class="metric-item">
+                                    <span class="metric-value" id="interview-rate">0%</span>
+                                    <span class="metric-label">Interview Rate</span>
+                                </div>
+                                <div class="metric-item">
+                                    <span class="metric-value" id="offer-rate">0%</span>
+                                    <span class="metric-label">Offer Rate</span>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="callback-chart card">
+                            <h3>Callback Rates by Type</h3>
+                            <div class="chart-container" style="position: relative; height: 250px;">
+                                <canvas id="callback-chart"></canvas>
+                            </div>
+                        </div>
+                        
+                        <div class="segment-performance card">
+                            <h3>Performance by Segment</h3>
+                            <div class="chart-container" style="position: relative; height: 250px;">
+                                <canvas id="segment-chart"></canvas>
+                            </div>
+                        </div>
+                        
+                        <div class="weekly-progress card">
+                            <h3>Weekly Application Volume</h3>
+                            <div class="chart-container" style="position: relative; height: 250px;">
+                                <canvas id="weekly-chart"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+
+        <!-- Add Job Modal -->
+        <div id="add-job-modal" class="modal hidden">
+            <div class="modal-backdrop"></div>
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h3>Add New Job Opportunity</h3>
+                    <button class="modal-close" id="close-add-modal">&times;</button>
+                </div>
+                <div class="modal-body">
+                    <form id="add-job-form">
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label class="form-label">Company *</label>
+                                <input type="text" class="form-control" name="company" required>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Role *</label>
+                                <input type="text" class="form-control" name="role" required>
+                            </div>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label class="form-label">Segment</label>
+                            <select class="form-control" name="segment">
+                                <option value="AI/Generative">AI/Generative</option>
+                                <option value="GTM SaaS">GTM SaaS</option>
+                                <option value="FinTech/Crypto">FinTech/Crypto</option>
+                                <option value="HealthTech">HealthTech</option>
+                                <option value="Other">Other</option>
+                            </select>
+                        </div>
+                        
+                        <div class="scoring-section">
+                            <h4>Scoring Criteria (1-5 scale)</h4>
+                            <div class="scoring-grid">
+                                <div class="form-group">
+                                    <label class="form-label">Fit Score</label>
+                                    <input type="range" class="form-range" name="fit_score" min="1" max="5" value="3">
+                                    <span class="range-value">3</span>
+                                </div>
+                                <div class="form-group">
+                                    <label class="form-label">Confidence</label>
+                                    <input type="range" class="form-range" name="confidence" min="1" max="5" value="3">
+                                    <span class="range-value">3</span>
+                                </div>
+                                <div class="form-group">
+                                    <label class="form-label">Financial Health</label>
+                                    <input type="range" class="form-range" name="financial_health" min="1" max="5" value="3">
+                                    <span class="range-value">3</span>
+                                </div>
+                                <div class="form-group">
+                                    <label class="form-label">Growth Signals</label>
+                                    <input type="range" class="form-range" name="growth_signals" min="1" max="5" value="3">
+                                    <span class="range-value">3</span>
+                                </div>
+                                <div class="form-group">
+                                    <label class="form-label">Referral Warmth</label>
+                                    <input type="range" class="form-range" name="referral_warmth" min="1" max="5" value="3">
+                                    <span class="range-value">3</span>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label class="form-label">Notes</label>
+                            <textarea class="form-control" name="notes" rows="3" placeholder="Add notes about company research, contacts, etc."></textarea>
+                        </div>
+                        
+                        <div class="modal-actions">
+                            <button type="button" class="btn btn--outline" id="cancel-add">Cancel</button>
+                            <button type="submit" class="btn btn--primary">Add Job</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- Job Detail Modal -->
+        <div id="job-modal" class="modal hidden">
+            <div class="modal-backdrop"></div>
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h3 id="modal-title">Job Details</h3>
+                    <button class="modal-close" id="close-modal">&times;</button>
+                </div>
+                <div class="modal-body">
+                    <div id="job-details"></div>
+                    <div class="job-actions">
+                        <button class="btn btn--primary" id="update-status-btn">Update Status</button>
+                        <button class="btn btn--secondary" id="edit-job-btn">Edit Job</button>
+                        <button class="btn btn--secondary" id="research-company-btn">🔍 Research Company</button>
+                        <button class="btn btn--outline btn--danger" id="delete-job-btn">Delete</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Company Research Modal -->
+        <div id="research-modal" class="modal hidden">
+            <div class="modal-backdrop"></div>
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h3 id="research-title">Company Research</h3>
+                    <button class="modal-close" id="close-research-modal">&times;</button>
+                </div>
+                <div class="modal-body">
+                    <div id="research-content">
+                        <div class="research-loading">
+                            <div class="loading-spinner"></div>
+                            <p>Researching company information...</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>

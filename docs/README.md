@@ -1,6 +1,6 @@
 # JobFlow PWA — Docs
 
-This app optimizes a senior PM job search with an offline‑first PWA and a clear, single‑user workflow: Discovery → Qualification → Priority Kanban → Interview Intelligence → Learning Analytics.
+This app optimizes a senior PM job search with an offline‑first PWA and a clear, single‑user workflow: Discovery → Qualification → Priority Kanban → Interview Intelligence → Learning Analytics. See `docs/roadmap.md` for the extensible plan and `docs/sprint-phase-b.md` for the sprint tickets.
 
 ## Feature Flags
 
@@ -82,8 +82,12 @@ Pre‑populate the following opportunities for quick validation:
 - Remote OK Product Manager RSS
 - Working Nomads Product RSS
 - NoDesk remote jobs RSS (broad; filtered by title keywords)
+ - Arbeitnow API (product manager; filtered by remote)
 
 If you want to add more sources (e.g., Himalayas), add their domain to the CSP `connect-src` and include the RSS URL in the discovery list.
+
+## Security Notes
+- No CDN libraries. Bundle charting and other libraries locally to satisfy `script-src 'self'`.
 
 ## Scoring Configuration (Optional)
 Customize via `window.JobFlowConfig.scoring` before reload:

@@ -1,8 +1,9 @@
-/* Simple offline-first service worker (no plugins) */
-const CACHE = 'jobflow-cache-v1';
+/* Offline-first service worker with cache versioning + fallback */
+const CACHE = 'jobflow-cache-v2';
 const CORE_ASSETS = [
   '/',
   '/index.html',
+  '/offline.html',
   '/src/main.js',
   '/src/store.js',
   '/manifest.webmanifest'
@@ -22,16 +23,24 @@ self.addEventListener('activate', (event) => {
 
 self.addEventListener('fetch', (event) => {
   const { request } = event;
-  if (request.method !== 'GET' || new URL(request.url).origin !== self.location.origin) return;
+  const url = new URL(request.url);
+  if (request.method !== 'GET' || url.origin !== self.location.origin) return;
 
   event.respondWith(
-    caches.match(request).then((cached) =>
-      cached || fetch(request).then((resp) => {
-        const respClone = resp.clone();
-        caches.open(CACHE).then((cache) => cache.put(request, respClone));
+    caches.match(request).then((cached) => {
+      if (cached) return cached;
+      return fetch(request).then((resp) => {
+        const copy = resp.clone();
+        caches.open(CACHE).then((cache) => cache.put(request, copy));
         return resp;
-      }).catch(() => cached)
-    )
+      }).catch(async () => {
+        // Navigation fallback for offline
+        if (request.mode === 'navigate') {
+          const fallback = await caches.match('/offline.html');
+          if (fallback) return fallback;
+        }
+        return caches.match(request);
+      });
+    })
   );
 });
-

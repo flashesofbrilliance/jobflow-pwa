@@ -1,5 +1,7 @@
 # 📋 TODO.md — JobFlow-PWA Sequenced Plan
 
+Note: For the extensible roadmap with dependencies and phased plan, see `docs/roadmap.md`.
+
 ## 🎯 Goal
 Data‑driven PM job search that discovers roles, qualifies in <2 minutes, prioritizes outreach, tracks pipeline, and learns from outcomes.
 

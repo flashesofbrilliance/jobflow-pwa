@@ -1,0 +1,37 @@
+phases:
+  - bootstrap:
+      tasks: [vite_init, vite_config, manifest_add, sw_register, offline_fallback]
+  - schema:
+      tasks: [indexeddb_define, migration_logic, quota_test, json_backup]
+  - design_system:
+      tasks: [tokens, components_core, accessibility_baseline]
+  - csv_import:
+      tasks: [parser_build, strict_header, preview_errors, keyboard_shortcuts, events]
+  - qualification_modal:
+      tasks: [modal_ui, hotkeys, categories, db_persist, events]
+  - kanban:
+      tasks: [board_build, drag_drop, priority_badges, deadlines]
+  - search_views:
+      tasks: [index_build, filters, saved_views]
+  - discovery_connectors:
+      tasks: [adapter_interface, rss_sources, normalizer, dedupe, scoring]
+  - dashboard:
+      tasks: [priority_compute, bands, cards_list]
+  - planning:
+      tasks: [model, weekly_targets, progress_tracking, timeline_chart]
+  - settings:
+      tasks: [flags_ui, scoring_editor, backups_ui]
+  - research:
+      tasks: [provider_interface, modal_ui, csp_scoped_fetch]
+  - calendar:
+      tasks: [timeline_view, reminders, ics_export]
+  - notes:
+      tasks: [rich_text, attachments, autosave]
+  - analytics:
+      tasks: [funnels, cohorts, source_roi, suggestions]
+  - automation:
+      tasks: [triggers, conditions, actions]
+  - integrations:
+      tasks: [gmail_compose, calendar_hooks, linkedin_shortcuts]
+  - qa:
+      tasks: [tracker_remove, console_clean, lighthouse_pwa]
