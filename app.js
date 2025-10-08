@@ -287,6 +287,8 @@ async function onDrop(e, newCol) {
   const hist = Array.isArray(o.stage_history)? o.stage_history : [];
   hist.push({ from, to:newCol, ts: Date.now() });
   o.stage_history = hist;
+  if (newCol==='applied' && !o.applied_at) o.applied_at = new Date().toISOString();
+  if (newCol==='interview' && !o.interviewed_at) o.interviewed_at = new Date().toISOString();
   await put(db,'opportunities', o);
   const kstate = await loadKanbanState(db);
   for (const col of STAGES) {
@@ -409,6 +411,8 @@ async function saveQualification(decision) {
     opp.status = 'to-apply';
   }
   if (decision === 'Reject') { opp.status = 'offer'; }
+  if (opp.status==='applied' && !opp.applied_at) opp.applied_at = new Date().toISOString();
+  if (opp.status==='interview' && !opp.interviewed_at) opp.interviewed_at = new Date().toISOString();
   await put(db,'opportunities', opp);
   const kstate = await loadKanbanState(db);
   for (const col of STAGES) {
@@ -478,6 +482,16 @@ function renderAnalytics(opps, reviews) {
     const line = el('div',{}, el('div',{}, `${k} — ${v}`), el('div',{class:'bar'}, el('span',{style:`width:${counts.discovery? (v/counts.discovery*100):0}%`})));
     funnel.append(line);
   }
+
+  // FPER (28-day rolling): applied without interview / applied
+  const now = Date.now();
+  const windowMs = 28*24*3600*1000;
+  const inWindow = (iso)=>{ try{ const t=new Date(iso).getTime(); return (now - t) <= windowMs; }catch{return false;} };
+  const appliedInWin = opps.filter(o=>o.applied_at && inWindow(o.applied_at));
+  const appliedNoInterview = appliedInWin.filter(o=>!o.interviewed_at || (!inWindow(o.interviewed_at)));
+  const fper = appliedInWin.length? Math.round((appliedNoInterview.length / appliedInWin.length)*100): 0;
+  const fperLine = el('div',{}, el('div',{}, `FPER (28d): ${fper}%  •  Applied ${appliedInWin.length}  •  No interview ${appliedNoInterview.length}`), el('div',{class:'bar'}, el('span',{style:`width:${fper}%`})));
+  funnel.append(el('div', {style:'margin-top:8px;'}, fperLine));
 
   const objCounts = {};
   reviews.filter(r=>r.decision==='Reject').forEach(r => r.objections.forEach(o => objCounts[o]=(objCounts[o]||0)+1));
@@ -882,7 +896,7 @@ document.getElementById('today-start')?.addEventListener('click', async ()=>{
   }, 250);
 });
 
-document.getElementById('today-complete')?.addEventListener('click', async ()=>{
+  document.getElementById('today-complete')?.addEventListener('click', async ()=>{
   const db = await openDB(); const opp = await get(db,'opportunities', currentTimerOppId); if (!opp) return;
   const note = document.getElementById('today-reflect').value || '';
   const sessions = Array.isArray(opp.sessions)? opp.sessions:[];
@@ -896,6 +910,73 @@ document.getElementById('today-complete')?.addEventListener('click', async ()=>{
 document.getElementById('gated-toggle')?.addEventListener('click', async ()=>{
   const db = await openDB(); const pref = await get(db,'user_preferences','gated'); const next = !(pref?.value ?? true); await put(db,'user_preferences', { key:'gated', value: next }); await refresh();
 });
+
+// --- Onboarding (chat + pacing) ---
+let onb = { step:0, totalMs:90000, perStepMs:18000, left:90000, paused:false, timer:null, answers:{} };
+function onbSetPace(mode){
+  const map = { relaxed:120000, standard:90000, focus:60000, off:0 };
+  const total = map[mode] ?? 90000; onb.totalMs = total; onb.left = total; onb.perStepMs = total? Math.floor(total/5):0;
+  const dbp = openDB().then(db=>put(db,'user_preferences',{key:'onboarding_pace', value: mode})).catch(()=>{});
+  document.querySelectorAll('#onb-modal [data-pace]').forEach(b=>{
+    b.classList.toggle('primary', b.getAttribute('data-pace')===mode);
+  });
+  document.getElementById('onb-timer').textContent = total? Math.round(total/1000)+'s' : '—';
+}
+function onbRenderStep(){
+  const body = document.getElementById('onb-body'); if (!body) return;
+  const s = onb.step;
+  const chips = (opts,name)=>`<div class="row" style="gap:6px;flex-wrap:wrap;">${opts.map(o=>`<button class=\"btn\" data-chip=\"${name}\" data-val=\"${o}\">${o}</button>`).join('')}</div>`;
+  if (s===0) body.innerHTML = `<div class="muted">P0 — What’s the struggle?</div>${chips(['no interviews','low energy','wrong roles','chaotic culture','overthinking'],'p0')}<input id="onb-free" placeholder="(optional) 1 line" style="margin-top:8px;">`;
+  if (s===1) body.innerHTML = `<div class="muted">P1 — Smallest win this week?</div>${chips(['1 screen','1 apply-quality/day','clarify target','kill 3 low-fits'],'p1')}`;
+  if (s===2) body.innerHTML = `<div class="muted">P2 — Non-negotiables (pick 1–2)</div>${chips(['Remote/NYC','senior IC','non-technical PM','collaborative','mission-aligned'],'p2')}`;
+  if (s===3) body.innerHTML = `<div class="muted">P3 — Vibe (1 tap)</div>${chips(['Polished–Chill','Formal–Guardrails','Fast–Pragmatic','Kind–Direct','Low‑ego/Ownership'],'p3')}`;
+  if (s===4) body.innerHTML = `<div class="muted">P4 — Plan your first 25 minutes</div>${chips(['apply','research','prep'],'p4')}<input type="datetime-local" id="onb-when" style="margin-top:8px;">`;
+}
+function onbAutoFill(){
+  const defaults = [ ['p0','no interviews'], ['p1','1 apply-quality/day'], ['p2','Remote/NYC'], ['p3','Polished–Chill'], ['p4','apply'] ];
+  const [k,v] = defaults[onb.step]||[]; if (k) onb.answers[k] = v;
+}
+function onbTick(){
+  if (onb.paused || !onb.totalMs) return;
+  onb.left = Math.max(0, onb.left-250);
+  const pct = 100 - Math.round((onb.left/onb.totalMs)*100);
+  const prog = document.getElementById('onb-progress'); if (prog) prog.style.width = pct+'%';
+  const t = document.getElementById('onb-timer'); if (t) t.textContent = Math.ceil(onb.left/1000)+'s';
+  if (onb.left===0){ onbAutoFill(); onbNext(); }
+}
+function onbStart(){
+  const modal = document.getElementById('onb-modal'); modal?.classList.add('show');
+  onb.step=0; onb.left=onb.totalMs; onb.answers={}; onbRenderStep();
+  if (onb.timer) clearInterval(onb.timer); onb.timer = setInterval(onbTick, 250);
+}
+function onbNext(){
+  onb.step++;
+  if (onb.step>4){ onbFinish(); return; }
+  onbRenderStep();
+}
+async function onbFinish(){
+  const modal = document.getElementById('onb-modal'); modal?.classList.remove('show'); if (onb.timer) clearInterval(onb.timer);
+  // Persist minimal outputs
+  const db = await openDB();
+  const prof = await get(db,'profile','profile') || { key:'profile' };
+  prof.current_frame = { id: crypto.randomUUID(), title: (onb.answers.p0||'frame'), summary: `${onb.answers.p0||''} → ${onb.answers.p1||''}`, committed_at: new Date().toISOString() };
+  prof.gates = prof.gates || { min_fit:70, min_energy:7 };
+  if (onb.answers.p2?.includes('Remote/NYC')) prof.gates.min_fit = Math.max(65, prof.gates.min_fit);
+  prof.stated = prof.stated || {}; prof.stated.vibe_axes = { professionalism:8, chill:7, follow_through:8, ethics:9, gsd_tilt:1 };
+  await put(db,'profile', {...prof, key:'profile'});
+  // Plan first session (25m next hour)
+  const opp = { id: crypto.randomUUID(), company:'Onboarding', role:`${onb.answers.p4||'apply'} session`, status:'to-apply', job_url:'', created_at: Date.now() };
+  opp.next_action = { type: onb.answers.p4||'apply', durationMin:25, planned_at: (document.getElementById('onb-when').value? new Date(document.getElementById('onb-when').value): new Date(Date.now()+60*60000)).toISOString(), planned_source:'onboarding' };
+  await bulkPut(db,'opportunities',[opp]);
+  await refresh();
+}
+document.getElementById('onboarding-open')?.addEventListener('click', ()=> onbStart());
+document.getElementById('onb-next')?.addEventListener('click', ()=> onbNext());
+document.getElementById('onb-pause')?.addEventListener('click', ()=> onb.paused=!onb.paused);
+document.getElementById('onb-skip')?.addEventListener('click', ()=> { onbAutoFill(); onbNext(); });
+document.querySelectorAll('#onb-modal [data-pace]')?.forEach(b=> b.addEventListener('click', ()=> onbSetPace(b.getAttribute('data-pace'))));
+// Initialize default pace
+onbSetPace('standard');
 
 // === CSV Import Wizard ===
 let csvWizard = { step: 1, rows: [], header: [], fileName: '', mapping: {}, items: [], duplicates: [], newbies: [], selectedIds: new Set(), invalids: [] };

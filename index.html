@@ -118,6 +118,7 @@
       <button id="profile-open" title="Profile & Gates">Profile</button>
       <button id="today-open" title="Today Queue">Today</button>
       <button id="gated-toggle" title="Toggle gated view">Gated</button>
+      <button id="onboarding-open" title="Onboarding">Onboard</button>
     </nav>
   </header>
 
@@ -295,6 +296,29 @@
         <button class="btn" id="today-close">Close</button>
         <button class="btn" id="today-start">Start Session</button>
         <button class="btn" id="today-complete" style="display:none;">Complete</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Onboarding (chat + pacing) -->
+  <div id="onb-modal" class="modal" role="dialog" aria-modal="true" aria-labelledby="onb-title">
+    <div class="sheet">
+      <div class="row" style="justify-content:space-between; align-items:center;">
+        <h3 id="onb-title">90 seconds to get you unstuck</h3>
+        <div class="row" style="gap:6px;">
+          <button class="btn" data-pace="relaxed">Relaxed</button>
+          <button class="btn primary" data-pace="standard">Standard</button>
+          <button class="btn" data-pace="focus">Focus</button>
+          <button class="btn" data-pace="off">Off</button>
+        </div>
+      </div>
+      <div class="bar"><span id="onb-progress" style="width:0%"></span></div>
+      <div class="muted" id="onb-timer">90s</div>
+      <div id="onb-body" class="list"></div>
+      <div class="actions">
+        <button class="btn" id="onb-pause">Pause</button>
+        <button class="btn" id="onb-skip">Skip</button>
+        <button class="btn primary" id="onb-next">Next</button>
       </div>
     </div>
   </div>
