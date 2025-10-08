@@ -2,7 +2,7 @@ import { openDB } from 'idb';
 
 const DB_NAME = 'jobflow';
 // Bump when adding stores/indexes. v4 introduces new stores; v5 adds planning/config.
-const DB_VERSION = 5;
+const DB_VERSION = 6;
 const STORE = 'opportunities';
 
 let dbPromise;

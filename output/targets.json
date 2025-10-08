@@ -1,0 +1,158 @@
+[
+  {
+    "type": "greenhouse",
+    "slug": "alchemy",
+    "company": "Alchemy",
+    "segment": ""
+  },
+  {
+    "type": "greenhouse",
+    "slug": "coinbase",
+    "company": "Coinbase",
+    "segment": ""
+  },
+  {
+    "type": "greenhouse",
+    "slug": "gemini",
+    "company": "Gemini",
+    "segment": ""
+  },
+  {
+    "type": "greenhouse",
+    "slug": "fireblocks",
+    "company": "Fireblocks",
+    "segment": ""
+  },
+  {
+    "type": "greenhouse",
+    "slug": "consensys",
+    "company": "Consensys",
+    "segment": ""
+  },
+  {
+    "type": "greenhouse",
+    "slug": "paradigm",
+    "company": "Paradigm",
+    "segment": ""
+  },
+  {
+    "type": "greenhouse",
+    "slug": "aptos",
+    "company": "Aptos Labs",
+    "segment": ""
+  },
+  {
+    "type": "greenhouse",
+    "slug": "ripple",
+    "company": "Ripple",
+    "segment": ""
+  },
+  {
+    "type": "greenhouse",
+    "slug": "okta",
+    "company": "Okta",
+    "segment": "Ecosystem/Partnerships"
+  },
+  {
+    "type": "lever",
+    "org": "kraken",
+    "company": "Kraken",
+    "segment": ""
+  },
+  {
+    "type": "ashby",
+    "org": "kraken",
+    "company": "Kraken",
+    "segment": ""
+  },
+  {
+    "type": "ashby",
+    "org": "quicknode",
+    "company": "QuickNode",
+    "segment": ""
+  },
+  {
+    "type": "ashby",
+    "org": "phantom",
+    "company": "Phantom",
+    "segment": ""
+  },
+  {
+    "type": "lever",
+    "org": "ledger",
+    "company": "Ledger",
+    "segment": ""
+  },
+  {
+    "type": "ashby",
+    "org": "ledger",
+    "company": "Ledger",
+    "segment": ""
+  },
+  {
+    "type": "ashby",
+    "org": "opensea",
+    "company": "OpenSea",
+    "segment": ""
+  },
+  {
+    "type": "ashby",
+    "org": "paradigm",
+    "company": "Paradigm",
+    "segment": ""
+  },
+  {
+    "type": "ashby",
+    "org": "blockdaemon",
+    "company": "Blockdaemon",
+    "segment": ""
+  },
+  {
+    "type": "ashby",
+    "org": "protocol",
+    "company": "Protocol Labs",
+    "segment": ""
+  },
+  {
+    "type": "ashby",
+    "org": "parity",
+    "company": "Parity Technologies",
+    "segment": ""
+  },
+  {
+    "type": "lever",
+    "org": "gauntlet",
+    "company": "Gauntlet",
+    "segment": ""
+  },
+  {
+    "type": "ashby",
+    "org": "base",
+    "company": "Base",
+    "segment": ""
+  },
+  {
+    "type": "ashby",
+    "org": "privy",
+    "company": "Privy",
+    "segment": ""
+  },
+  {
+    "type": "ashby",
+    "org": "bridge",
+    "company": "Bridge",
+    "segment": ""
+  },
+  {
+    "type": "ashby",
+    "org": "render",
+    "company": "Render",
+    "segment": ""
+  },
+  {
+    "type": "ashby",
+    "org": "writer",
+    "company": "Writer",
+    "segment": ""
+  }
+]

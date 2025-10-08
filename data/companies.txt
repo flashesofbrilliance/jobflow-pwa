@@ -1,0 +1,55 @@
+Alchemy
+Coinbase
+Circle
+Kraken
+Gemini
+Anchorage Digital
+Fireblocks
+Consensys
+Infura
+QuickNode
+Thirdweb
+WalletConnect
+Rainbow
+Phantom
+Ledger
+Trezor
+OpenSea
+Uniswap Labs
+Paradigm
+Pantera Capital
+Andreessen Horowitz
+Framework Ventures
+Polychain Capital
+Chainalysis
+TRM Labs
+Blockdaemon
+Chainstack
+Protocol Labs
+Filecoin Foundation
+Parity Technologies
+Web3 Foundation
+Near Foundation
+Aptos Labs
+Mysten Labs
+Offchain Labs
+Optimism Foundation
+StarkWare
+Matter Labs
+Polygon Labs
+Solana Foundation
+Ripple
+Eigen Labs
+Flashbots
+Gauntlet
+Lido
+Jump Crypto
+Scroll
+Linea
+Base
+Privy
+Bridge
+Okta
+Render
+Perplexity AI
+Writer

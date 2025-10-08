@@ -1,1 +1,3 @@
-company,role,sector,job_url,deadline,salary_range,location,remote_policy,contact_name,contact_linkedin,notes,fit_score
+company,role,job_url,status,priority_score,fit_score,deadline,notes
+Acme Corp,Senior Product Manager,https://example.com/jobs/123,research,80,85,2025-10-31,Example note
+

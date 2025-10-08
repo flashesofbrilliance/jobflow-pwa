@@ -1,0 +1,192 @@
+[
+  {
+    "name": "Lerer Hippeau",
+    "url": "https://jobs.lererhippeau.com/jobs",
+    "type": "getro"
+  },
+  {
+    "name": "a16z",
+    "url": "https://jobs.a16z.com/jobs",
+    "type": "getro"
+  },
+  {
+    "name": "Pantera Capital",
+    "url": "https://jobs.panteracapital.com/jobs/pantera-capital",
+    "type": "getro"
+  },
+  {
+    "name": "Alchemy GH Board",
+    "url": "https://job-boards.greenhouse.io/alchemy/",
+    "type": "greenhouse-board"
+  },
+  {
+    "name": "Sequoia Capital",
+    "url": "https://www.sequoiacap.com/jobs/",
+    "type": "aggregator"
+  },
+  {
+    "name": "Index Ventures",
+    "url": "https://www.indexventures.com/startup-jobs/",
+    "type": "aggregator"
+  },
+  {
+    "name": "Accel",
+    "url": "https://jobs.accel.com/",
+    "type": "getro"
+  },
+  {
+    "name": "Greylock",
+    "url": "https://jobs.greylock.com/",
+    "type": "getro"
+  },
+  {
+    "name": "USV",
+    "url": "https://jobs.usv.com/",
+    "type": "getro"
+  },
+  {
+    "name": "First Round",
+    "url": "https://jobs.firstround.com/",
+    "type": "getro"
+  },
+  {
+    "name": "Lightspeed",
+    "url": "https://jobs.lsvp.com/",
+    "type": "getro"
+  },
+  {
+    "name": "Andreessen Horowitz (Portfolio)",
+    "url": "https://a16z.com/portfolio/jobs/",
+    "type": "aggregator"
+  },
+  {
+    "name": "Kleiner Perkins",
+    "url": "https://jobs.kleinerperkins.com/",
+    "type": "getro"
+  },
+  {
+    "name": "Bessemer Venture Partners",
+    "url": "https://jobs.bvp.com/",
+    "type": "getro"
+  },
+  {
+    "name": "General Catalyst",
+    "url": "https://jobs.generalcatalyst.com/",
+    "type": "getro"
+  },
+  {
+    "name": "Battery Ventures",
+    "url": "https://jobs.battery.com/",
+    "type": "getro"
+  },
+  {
+    "name": "Craft Ventures",
+    "url": "https://jobs.craftventures.com/",
+    "type": "getro"
+  },
+  {
+    "name": "Multicoin Capital",
+    "url": "https://jobs.multicoin.capital/",
+    "type": "getro"
+  },
+  {
+    "name": "Paradigm",
+    "url": "https://jobs.paradigm.xyz/",
+    "type": "aggregator"
+  },
+  {
+    "name": "Redpoint",
+    "url": "https://jobs.redpoint.com/",
+    "type": "getro"
+  },
+  {
+    "name": "Menlo Ventures",
+    "url": "https://jobs.menlovc.com/",
+    "type": "getro"
+  },
+  {
+    "name": "DCG",
+    "url": "https://jobs.dcg.co/",
+    "type": "getro"
+  },
+  {
+    "name": "Delphi Ventures",
+    "url": "https://jobs.delphiventures.io/",
+    "type": "getro"
+  },
+  {
+    "name": "Insight Partners",
+    "url": "https://jobs.insightpartners.com/",
+    "type": "getro"
+  },
+  {
+    "name": "NEA",
+    "url": "https://jobs.nea.com/",
+    "type": "getro"
+  },
+  {
+    "name": "Coatue",
+    "url": "https://jobs.coatue.com/",
+    "type": "getro"
+  },
+  {
+    "name": "TCV",
+    "url": "https://jobs.tcv.com/",
+    "type": "getro"
+  },
+  {
+    "name": "IVP",
+    "url": "https://jobs.ivp.com/",
+    "type": "getro"
+  },
+  {
+    "name": "Founders Fund",
+    "url": "https://jobs.foundersfund.com/",
+    "type": "getro"
+  },
+  {
+    "name": "Lux Capital",
+    "url": "https://jobs.luxcapital.com/",
+    "type": "getro"
+  },
+  {
+    "name": "Initialized",
+    "url": "https://jobs.initialized.com/",
+    "type": "getro"
+  },
+  {
+    "name": "Peak XV Partners",
+    "url": "https://jobs.peakxv.com/",
+    "type": "getro"
+  },
+  {
+    "name": "Balderton",
+    "url": "https://jobs.balderton.com/",
+    "type": "getro"
+  },
+  {
+    "name": "Atomico",
+    "url": "https://jobs.atomico.com/",
+    "type": "getro"
+  },
+  {
+    "name": "Point Nine",
+    "url": "https://jobs.pointnine.com/",
+    "type": "getro"
+  },
+  {
+    "name": "Felicis",
+    "url": "https://jobs.felicis.com/",
+    "type": "getro"
+  },
+  {
+    "name": "Khosla Ventures",
+    "url": "https://jobs.khoslaventures.com/",
+    "type": "getro"
+  },
+  {
+    "name": "Sapphire Ventures",
+    "url": "https://jobs.sapphireventures.com/",
+    "type": "getro"
+  }
+]

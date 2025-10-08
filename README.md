@@ -1,33 +1,50 @@
-# JobFlow PWA
+# JobFlow PWA V0
 
-A minimal, fast, offline‑capable app scaffold to manage a job search pipeline (Discovery → Qualification → Kanban). Uses Vite, a simple service worker, and IndexedDB via `idb`.
+Privacy-first, offline-capable PWA for job discovery, structured qualification, Kanban tracking, archive/learning, and analytics. 100% client-side; no external dependencies or trackers.
 
-## Scripts
+## Run locally
+- Serve over HTTP (required for service worker):
+  - Python: `python3 -m http.server 5173`
+  - Node: `npx http-server -p 5173` (if available)
+- Open: `http://localhost:5173/`
+- First load seeds 5 sample opportunities and registers the service worker.
 
-- `npm run dev` — start Vite dev server
-- `npm run build` — build to `dist`
-- `npm run preview` — serve the production build locally
-- `npm run lint` — run ESLint
-- `npm test` — run Playwright smoke test (starts preview server)
+## Offline test
+- After first load, go offline and reload. Kanban and all data remain available.
+- “Add to Home Screen” should be offered; manifest and sw are present.
 
-## PWA
+## Capability model
+```
+capabilities = {
+  discoveryAvailable: navigator.onLine && sourcesConfigured, // feeds disabled in V0 due to strict CSP
+  qualificationAvailable: hasIndexedDB && hasData,
+  archiveAvailable: hasQualificationReviews,
+  analyticsAvailable: hasArchiveData
+}
+```
 
-- Manifest: `public/manifest.webmanifest`
-- Service Worker: `public/sw.js` (cache‑first for same‑origin GETs)
+## Privacy & CSP
+- Strict CSP is enforced via `<meta http-equiv="Content-Security-Policy" ...>`:
+  - `script-src 'self'; connect-src 'self'; img-src 'self' data:; worker-src 'self'`
+- To test external feeds (WeWorkRemotely, Himalayas, Remotive), relax `connect-src` to include those origins. CSV import remains fully offline.
 
-## IndexedDB
+## Data model (stores)
+- `opportunities`: `{id, company, role, status, priority_score, fit_score, deadline, notes, job_url, hash, created_at}`
+- `qualification_reviews`: `{id, opportunity_id, decision, fit_category, objections[], exclusions[], confidence, briefing_text, reviewed_at}`
+- `kanban_state`: `{column_id, opportunity_ids[]}`
+- `research_intel`: `{id, opportunity_id, intel_type, source, data, confidence}`
+- `user_preferences`: `{key, value}`
+- `meta`: `{key, value}` (e.g., `appVersion`, `schema_version`)
 
-See `src/store.js` for a tiny `idb` wrapper. On the homepage you can seed and clear sample opportunities.
+## Quality gates (V0)
+- Console: no errors on happy path
+- Network: no external requests
+- PWA: `manifest.json` and `sw.js` serve 200; installable
+- Offline: reload shows Kanban
+- Functionality: drag-drop persists; qualification modal works
+- Mobile: responsive, touch-friendly cards/columns
 
-## CI
-
-GitHub Actions workflow at `.github/workflows/ci.yml` runs lint, build, and Playwright smoke tests.
-
-## Docker
-
-Multi‑stage Dockerfile builds static assets and serves with Nginx. Config in `nginx.conf` with safe caching defaults for HTML and SW.
-
-## Roadmap
-
-Backlog lives in `TODO.md`.
+## CSV template
+See `csv_templates/discovery_import_template.csv`. Required headers:
+`company,role,job_url,status,priority_score,fit_score,deadline,notes`
 

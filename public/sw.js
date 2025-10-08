@@ -1,5 +1,5 @@
 /* Offline-first service worker with cache versioning + fallback */
-const CACHE = 'jobflow-cache-v2';
+const CACHE = 'jobflow-cache-v3';
 const CORE_ASSETS = [
   '/',
   '/index.html',

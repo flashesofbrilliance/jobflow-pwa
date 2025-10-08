@@ -5,12 +5,18 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build",
+    "postbuild": "node scripts/postbuild.js",
     "preview": "vite preview",
     "preview:prod": "bash scripts/preview.sh",
     "preview:static": "node scripts/preview-static.js",
     "lint": "eslint . --ext .js,.jsx,.ts,.tsx",
     "test": "playwright test",
-    "deploy:gh": "bash scripts/deploy.sh"
+    "deploy:gh": "bash scripts/deploy.sh",
+    "fetch": "node scripts/fetch-all.mjs",
+    "detect:greenhouse": "node scripts/detect-greenhouse.mjs --in=data/companies.txt --out=output/greenhouse_detect.csv",
+    "detect:ats": "node scripts/detect-ats.mjs --in=data/companies.txt --out=output/ats_detect.csv",
+    "build:targets": "node scripts/build-targets.mjs --gh=output/greenhouse_detect.csv --ats=output/ats_detect.csv --out=output/targets.json",
+    "fetch:combined": "node scripts/fetch-all.mjs --targets=output/targets.json --boards-file=data/vc-boards.json --delta-only --state=output/fetch_state.json"
   },
   "dependencies": {
     "idb": "^7.1.1"

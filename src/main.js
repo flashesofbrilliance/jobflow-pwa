@@ -29,9 +29,6 @@ async function init() {
   const jobDetailSave = document.getElementById('jobDetailSave');
   const jobDetailDelete = document.getElementById('jobDetailDelete');
   const jobDetailResearch = document.getElementById('jobDetailResearch');
-  const jobDetailModal = document.getElementById('jobDetailModal');
-  const jobDetailBody = document.getElementById('jobDetailBody');
-  const jobDetailClose = document.getElementById('jobDetailClose');
 
   // Planning elements
   const planSection = document.getElementById('planningSection');
