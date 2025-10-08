@@ -747,27 +747,7 @@ function toICSDate(d){
   const h=pad2(d.getUTCHours()), mi=pad2(d.getUTCMinutes()), s=pad2(d.getUTCSeconds());
   return `${y}${m}${da}T${h}${mi}${s}Z`;
 }
-function mkICS(opp, type, start, durationMin){
-  const end = new Date(start.getTime() + durationMin*60000);
-  const lines = [
-    'BEGIN:VCALENDAR','VERSION:2.0','PRODID:-//JobFlow//EN','BEGIN:VEVENT',
-    'DTSTAMP:'+toICSDate(new Date()),
-    'DTSTART:'+toICSDate(start),
-    'DTEND:'+toICSDate(end),
-    'SUMMARY:'+`JobFlow ${type} — ${opp.company} — ${opp.role}`,
-    'DESCRIPTION:'+`Planned via JobFlow triage. Link: ${opp.job_url||''}`,
-    'END:VEVENT','END:VCALENDAR'
-  ];
-  return new Blob([lines.join('\r\n')], { type:'text/calendar' });
-}
-function mkGCalUrl(opp, type, start, durationMin){
-  const end = new Date(start.getTime()+durationMin*60000);
-  const fmt = (d)=> encodeURIComponent(d.toISOString().replace(/[-:]/g,'').replace(/\.\d{3}Z$/,'Z'));
-  const dates = fmt(start)+'/'+fmt(end);
-  const text = encodeURIComponent(`JobFlow ${type} — ${opp.company} — ${opp.role}`);
-  const details = encodeURIComponent(`Planned via JobFlow triage. ${opp.job_url||''}`);
-  return `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${text}&dates=${dates}&details=${details}`;
-}
+// mkICS and mkGCalUrl are now provided by './src/vendor-adapters/calendar.js'
 
 document.getElementById('triage-duration')?.addEventListener('change', ()=>{
   const sel = document.getElementById('triage-duration');
@@ -786,10 +766,10 @@ document.getElementById('triage-plan')?.addEventListener('click', async ()=>{
   await put(db,'opportunities', opp);
   // Offer calendar add: download ICS and open Google Cal link
   try {
-    const ics = mkICS(opp, type, start, dur);
+    const ics = (await import('./src/vendor-adapters/calendar.js')).mkICS(opp, type, start, dur);
     const url = URL.createObjectURL(ics);
     const a = document.createElement('a'); a.href = url; a.download = `JobFlow-${type}-${opp.company}.ics`; a.click(); URL.revokeObjectURL(url);
-    window.open(mkGCalUrl(opp, type, start, dur), '_blank');
+    window.open((await import('./src/vendor-adapters/calendar.js')).mkGCalUrl(opp, type, start, dur), '_blank');
     if ('Notification' in window && Notification.permission !== 'denied') {
       const perm = await Notification.requestPermission();
       if (perm==='granted') {

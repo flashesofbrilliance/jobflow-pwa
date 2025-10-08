@@ -1,0 +1,58 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>UI Preview — JobFlow</title>
+  <link rel="stylesheet" href="./tokens.css">
+  <link rel="stylesheet" href="./styles.css">
+</head>
+<body>
+  <header>
+    <h1>UI Preview — Tokens vs Primitives</h1>
+    <div class="modes">
+      <button data-mode="native" class="active">Native+Tokens</button>
+      <button data-mode="pico">Pico (minimal)</button>
+      <button data-mode="openprops">Open Props (tokens)</button>
+    </div>
+  </header>
+  <main>
+    <section>
+      <h2>Dialog</h2>
+      <button id="openDialog">Open Dialog</button>
+      <div id="dialog" class="modal"><div class="sheet"><h3>Dialog Title</h3><p>Accessible modal using current tokens.</p><div class="actions"><button id="closeDialog">Close</button></div></div></div>
+    </section>
+    <section>
+      <h2>Progress Bars</h2>
+      <div class="bar"><span style="width:70%"></span></div>
+      <div class="bar"><span style="width:40%"></span></div>
+    </section>
+    <section>
+      <h2>Badges</h2>
+      <span class="badge">Honesty: Realistic</span>
+      <span class="badge warn">Energy 8/10</span>
+    </section>
+    <section>
+      <h2>Tabs (static)</h2>
+      <div class="tabs">
+        <button class="active">Details</button>
+        <button>Evidence</button>
+      </div>
+      <div class="panel">This area simulates tab content.</div>
+    </section>
+  </main>
+  <script>
+    const dlg = document.getElementById('dialog');
+    document.getElementById('openDialog').onclick = ()=> dlg.classList.add('show');
+    document.getElementById('closeDialog').onclick = ()=> dlg.classList.remove('show');
+    document.querySelectorAll('.modes button').forEach(b=>{
+      b.onclick = ()=>{
+        document.querySelectorAll('.modes button').forEach(x=>x.classList.remove('active'));
+        b.classList.add('active');
+        document.body.dataset.mode = b.dataset.mode;
+      };
+    });
+  </script>
+</body>
+</html>
+
