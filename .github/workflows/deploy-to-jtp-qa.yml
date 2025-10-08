@@ -1,0 +1,50 @@
+name: Cross-Repo Deploy to job-tracker-pro QA
+
+on:
+  workflow_dispatch:
+    inputs:
+      ref:
+        description: Git ref to build (branch, tag, or SHA)
+        required: false
+        default: main
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: jobflow-pwa
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.inputs.ref }}
+          submodules: true
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: jobflow-pwa/package-lock.json
+
+      - name: Install
+        run: npm ci
+
+      - name: Build
+        run: npm run build && node scripts/postbuild.js || true
+
+      - name: Debug dist contents
+        run: |
+          echo "Built files:" && ls -lah dist || true
+
+      - name: Publish to job-tracker-pro gh-pages env/qa/latest
+        uses: peaceiris/actions-gh-pages@v3
+        with:
+          personal_token: ${{ secrets.GH_PAGES_TOKEN }}
+          external_repository: flashesofbrilliance/job-tracker-pro
+          publish_branch: gh-pages
+          publish_dir: jobflow-pwa/dist
+          destination_dir: env/qa/latest
+          keep_files: true
+          force_orphan: true

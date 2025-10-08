@@ -8,7 +8,22 @@ This document enables smooth handoff from Codex CLI to Hype IDE (or any Node 20 
 - Production preview: `npm run build && npm run preview`
 - Deploy (CI auto): push to `main`/`master` — GH Actions publishes to `gh-pages`
 - Manual deploy: `npm run deploy:gh`
- - PR preview: open/sync a PR touching `jobflow-pwa/**` — preview published to `gh-pages` under `pr/<number>/`
+- PR preview: open/sync a PR touching `jobflow-pwa/**` — preview published to `gh-pages` under `pr/<number>/`
+- Cross-repo QA deploy: Actions → “Cross-Repo Deploy to job-tracker-pro QA” (requires `GH_PAGES_TOKEN` secret with `repo` scope). Publishes to `flashesofbrilliance/job-tracker-pro` gh-pages at `env/qa/latest`.
+
+## Secrets & Tokens (no obfuscation)
+- We never commit tokens to the repo. Any token is stored in GitHub → Repo → Settings → Secrets and used by workflows only.
+- `GH_PAGES_TOKEN` (only needed for cross-repo QA deploy):
+  - Scope: `repo` (private) or `public_repo` (public repos)
+  - Used by: `.github/workflows/deploy-to-jtp-qa.yml` as `personal_token` for publishing `dist` to `flashesofbrilliance/job-tracker-pro` `gh-pages/env/qa/latest`.
+  - Not needed for PR Preview or Artifact builds.
+- Submodules: all workflows use `actions/checkout@v4` with `submodules: true` — no extra secrets needed.
+
+## Workflow Map (what uses what)
+- `.github/workflows/pr-preview.yml`: builds and publishes preview to `gh-pages/pr/<number>/` in this repo (no secrets).
+- `.github/workflows/build-artifact.yml`: builds and uploads `jobflow-pwa_dist.zip` as an artifact (no secrets).
+- `.github/workflows/deploy.yml`: manual Pages deploy to this repo’s `gh-pages` (no extra secrets).
+- `.github/workflows/deploy-to-jtp-qa.yml`: manual cross-repo deploy to job-tracker-pro `env/qa/latest` (requires `GH_PAGES_TOKEN`).
 
 ## Data Flow (MVP)
 - Discovery: run delta-only fetcher to produce CSV, then import in app
