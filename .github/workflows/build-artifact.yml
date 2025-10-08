@@ -1,0 +1,35 @@
+name: Build Artifact (PWA)
+
+on:
+  workflow_dispatch: {}
+  pull_request:
+    branches: [ main, master ]
+    paths:
+      - 'jobflow-pwa/**'
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: jobflow-pwa
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: true
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: jobflow-pwa/package-lock.json
+      - run: npm ci
+      - run: npm run build
+      - name: Zip dist
+        run: |
+          cd dist && zip -r ../jobflow-pwa_dist.zip .
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: jobflow-pwa_dist
+          path: jobflow-pwa_dist.zip
+

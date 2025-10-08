@@ -1,0 +1,42 @@
+name: PR Preview (gh-pages/pr/<number>/)
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+    paths:
+      - 'jobflow-pwa/**'
+
+jobs:
+  build-and-publish:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: jobflow-pwa
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          submodules: true
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: jobflow-pwa/package-lock.json
+
+      - name: Install
+        run: npm ci
+
+      - name: Build
+        run: npm run build && node scripts/postbuild.js || true
+
+      - name: Publish PR preview to gh-pages/pr/<number>/
+        uses: peaceiris/actions-gh-pages@v3
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_branch: gh-pages
+          publish_dir: jobflow-pwa/dist
+          destination_dir: pr/${{ github.event.number }}
+          keep_files: true
+
