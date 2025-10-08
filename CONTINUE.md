@@ -8,7 +8,8 @@ This document enables smooth handoff from Codex CLI to Hype IDE (or any Node 20 
 - Production preview: `npm run build && npm run preview`
 - Deploy (CI auto): push to `main`/`master` — GH Actions publishes to `gh-pages`
 - Manual deploy: `npm run deploy:gh`
-- PR preview: open/sync a PR touching `jobflow-pwa/**` — preview published to `gh-pages` under `pr/<number>/`
+ - PR preview: open/sync a PR touching `jobflow-pwa/**` — preview published to `gh-pages` under `pr/<number>/`
+ - Auto-PR on push (Option B): Push any branch named `feat/**` and CI will automatically open/update a PR to `main` (workflow: `.github/workflows/auto-pr.yml`). This triggers PR Preview publishing to `gh-pages/pr/<PR_NUMBER>/`.
 - Cross-repo QA deploy: Actions → “Cross-Repo Deploy to job-tracker-pro QA” (requires `GH_PAGES_TOKEN` secret with `repo` scope). Publishes to `flashesofbrilliance/job-tracker-pro` gh-pages at `env/qa/latest`.
 
 ## Secrets & Tokens (no obfuscation)
