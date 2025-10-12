@@ -81,6 +81,9 @@ This document enables smooth handoff from Codex CLI to Hype IDE (or any Node 20 
 - SW cache bumped via `sw.js` version string
 - If UI looks stale: hard-refresh or clear SW in DevTools
 
+## Visual Direction
+- Adopted JTP-inspired UI tokens (green accent, darker panels). UI preview defaults to JTP mode.
+
 ---
 
 ## Phase 0 Status (Live Checklist)
