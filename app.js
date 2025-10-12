@@ -1,4 +1,5 @@
 // JobFlow PWA - App Core (ESM, no deps)
+import { mkICS, mkGCalUrl } from './src/vendor-adapters/calendar.js';
 const APP_VERSION = '1.2.0';
 const DB_NAME = 'jobflow';
 const DB_VERSION = 7; // add profile/reflections/analytics/goals stores
@@ -780,10 +781,10 @@ document.getElementById('triage-plan')?.addEventListener('click', async ()=>{
   await put(db,'opportunities', opp);
   // Offer calendar add: download ICS and open Google Cal link
   try {
-    const ics = (await import('./src/vendor-adapters/calendar.js')).mkICS(opp, type, start, dur);
+    const ics = mkICS(opp, type, start, dur);
     const url = URL.createObjectURL(ics);
     const a = document.createElement('a'); a.href = url; a.download = `JobFlow-${type}-${opp.company}.ics`; a.click(); URL.revokeObjectURL(url);
-    window.open((await import('./src/vendor-adapters/calendar.js')).mkGCalUrl(opp, type, start, dur), '_blank');
+    window.open(mkGCalUrl(opp, type, start, dur), '_blank');
     if ('Notification' in window && Notification.permission !== 'denied') {
       const perm = await Notification.requestPermission();
       if (perm==='granted') {
@@ -916,7 +917,10 @@ let onb = { step:0, totalMs:90000, perStepMs:18000, left:90000, paused:false, ti
 function onbSetPace(mode){
   const map = { relaxed:120000, standard:90000, focus:60000, off:0 };
   const total = map[mode] ?? 90000; onb.totalMs = total; onb.left = total; onb.perStepMs = total? Math.floor(total/5):0;
-  const dbp = openDB().then(db=>put(db,'user_preferences',{key:'onboarding_pace', value: mode})).catch(()=>{});
+  const dbp = openDB().then(async db=>{
+    try { await put(db,'user_preferences',{key:'onboarding_pace', value: mode}); } catch {}
+    try { await put(db,'user_preferences',{key:'onboarding_countdown', value: mode !== 'off'}); } catch {}
+  }).catch(()=>{});
   document.querySelectorAll('#onb-modal [data-pace]').forEach(b=>{
     b.classList.toggle('primary', b.getAttribute('data-pace')===mode);
   });
@@ -966,8 +970,33 @@ async function onbFinish(){
   await put(db,'profile', {...prof, key:'profile'});
   // Plan first session (25m next hour)
   const opp = { id: crypto.randomUUID(), company:'Onboarding', role:`${onb.answers.p4||'apply'} session`, status:'to-apply', job_url:'', created_at: Date.now() };
-  opp.next_action = { type: onb.answers.p4||'apply', durationMin:25, planned_at: (document.getElementById('onb-when').value? new Date(document.getElementById('onb-when').value): new Date(Date.now()+60*60000)).toISOString(), planned_source:'onboarding' };
+  const whenEl = document.getElementById('onb-when');
+  const whenVal = whenEl && 'value' in whenEl ? whenEl.value : '';
+  const planned = whenVal ? new Date(whenVal) : new Date(Date.now()+60*60000);
+  opp.next_action = { type: onb.answers.p4||'apply', durationMin:25, planned_at: planned.toISOString(), planned_source:'onboarding' };
   await bulkPut(db,'opportunities',[opp]);
+  // Reflection entry capturing onboarding summary
+  try {
+    const freeEl = document.getElementById('onb-free');
+    const note = (freeEl && 'value' in freeEl) ? (freeEl.value||'') : '';
+    await put(db,'reflections', {
+      id: crypto.randomUUID(),
+      type: 'onboarding',
+      ts: Date.now(),
+      summary: `${onb.answers.p0||''} → ${onb.answers.p1||''}`,
+      details: { vibe: onb.answers.p3||'', plan: onb.answers.p4||'', when: planned.toISOString(), note }
+    });
+  } catch {}
+  // Mark onboarding completed in prefs/meta
+  try { await put(db,'user_preferences', { key:'onboarding_completed', value:true }); } catch {}
+  try { await put(db,'meta', { key:'onboarding_completed_at', value: new Date().toISOString() }); } catch {}
+  // Offer to add calendar entry via adapter
+  try {
+    const ics = mkICS(opp, opp.next_action.type, planned, opp.next_action.durationMin);
+    const url = URL.createObjectURL(ics);
+    const a = document.createElement('a'); a.href = url; a.download = `JobFlow-${opp.next_action.type}-${opp.company}.ics`; a.click(); URL.revokeObjectURL(url);
+    window.open(mkGCalUrl(opp, opp.next_action.type, planned, opp.next_action.durationMin), '_blank');
+  } catch {}
   await refresh();
 }
 document.getElementById('onboarding-open')?.addEventListener('click', ()=> onbStart());

@@ -80,3 +80,28 @@ This document enables smooth handoff from Codex CLI to Hype IDE (or any Node 20 
 ## Notes
 - SW cache bumped via `sw.js` version string
 - If UI looks stale: hard-refresh or clear SW in DevTools
+
+---
+
+## Phase 0 Status (Live Checklist)
+
+Use this to track what’s shipped vs. in progress. I will keep this section current as I ship each checkpoint. PRs automatically create preview URLs via the PR Preview workflow.
+
+### Complete
+- Onboarding skeleton (chat + pacing): Relaxed/Standard/Focus/Off, gentle countdown, Pause/Skip/Next, safe auto-fill defaults, minimal session plan
+- Onboarding completion: ICS/GCal plan via adapter; reflection entry; gates/vibe/current_frame persisted
+- FPER baseline (28‑day rolling) and status timestamps (applied_at/interviewed_at)
+- CI: PR Preview, Build Artifact, Manual Pages deploy; Auto‑PR on push to `feat/**`
+- Docs: CONTINUE/DEV‑QUICKSTART/API‑STUBS updated; back‑project specs (03/04/05/06/07/08/11/13/14)
+
+### In Progress
+- Minimal Frame Storming: elicit → distortions → reframe → commit (reflection/event)
+- UI preview “job-tracker-pro” mode; adapter‑driven reuse of ICS and chips/badges/progress CSS
+
+### To Do (Phase 0 remainder)
+- Kairos prompts P1–P3: plan‑time culture mismatch; deadline proximity; discovery “Show all (reasons)” nudges
+- FPER card polish: split gated vs force‑accept
+
+### Blocked
+- None for PR Preview and jobflow‑pwa Pages deploy
+- Cross‑repo QA “latest” requires `GH_PAGES_TOKEN` if desired (optional; PR Preview recommended for rapid review)
