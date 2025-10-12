@@ -84,6 +84,12 @@ This document enables smooth handoff from Codex CLI to Hype IDE (or any Node 20 
 ## Visual Direction
 - Adopted JTP-inspired UI tokens (green accent, darker panels). UI preview defaults to JTP mode.
 
+## QA Mode
+- Header → QA opens a modal to:
+  - Seed basic/variant data; reset DB
+  - Simulate CSV import; generate sessions; toggle gated view
+  - Run validation checks (SW registered, stores present, FPER split visible)
+
 ---
 
 ## Phase 0 Status (Live Checklist)

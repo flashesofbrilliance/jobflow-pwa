@@ -722,6 +722,92 @@ document.getElementById('profile-save')?.addEventListener('click', async ()=>{
   document.getElementById('profile-modal')?.classList.remove('show');
 });
 
+// === QA Mode ===
+document.getElementById('qa-open')?.addEventListener('click', ()=> document.getElementById('qa-modal')?.classList.add('show'));
+document.getElementById('qa-close')?.addEventListener('click', ()=> document.getElementById('qa-modal')?.classList.remove('show'));
+
+async function qaResetDb(){
+  try { await new Promise((res,rej)=>{ const req = indexedDB.deleteDatabase(DB_NAME); req.onsuccess=()=>res(); req.onerror=()=>rej(req.error); }); } catch {}
+  location.reload();
+}
+async function qaSeedBasic(){
+  const db = await openDB();
+  const ops = await getAll(db,'opportunities');
+  if (!ops.length) { await ensureSeed(db); }
+  await refresh();
+}
+async function qaSeedVariants(){
+  const db = await openDB();
+  const now = Date.now();
+  const mk = (p)=>({ id: crypto.randomUUID(), created_at: now, posted_at: new Date(now-5*86400000).toISOString(), location:'NYC', segment:'AI', applicant_volume: 120, interest_score: 7, notes:'QA seed', ...p });
+  const items = [
+    mk({company:'Acme', role:'PM, Platform', status:'to-apply', fit_score:82, deadline:new Date(now+3*86400000).toISOString()}),
+    mk({company:'Bravo', role:'PM, Growth', status:'applied', fit_score:76, applied_at:new Date(now-10*86400000).toISOString()}),
+    mk({company:'Cobalt', role:'Sr PM, AI', status:'interview', fit_score:91, applied_at:new Date(now-20*86400000).toISOString(), interviewed_at:new Date(now-5*86400000).toISOString()}),
+    mk({company:'Delta', role:'PM, Ops', status:'offer', fit_score:55}),
+    mk({company:'Echo', role:'PM, Data', status:'applied', fit_score:68, applied_at:new Date(now-6*86400000).toISOString(), stage_history:[{from:'qualification',to:'to-apply',ts:now-7*86400000,note:'force:demo'}]}),
+    mk({company:'Foxtrot', role:'PM, Mobile', status:'research', fit_score:60, barriers:['Location'], energy_score:5})
+  ].map(o=> ({...o, job_url:'', hash: hashKey([o.company,o.role,''].join('|').toLowerCase())}));
+  await bulkPut(db,'opportunities', items);
+  // Build kanban_state
+  const ks = {};
+  for (const col of STAGES) ks[col.id] = { column_id: col.id, opportunity_ids: [] };
+  for (const o of items) { if (!ks[o.status]) ks[o.status] = {column_id:o.status, opportunity_ids:[]}; ks[o.status].opportunity_ids.push(o.id); }
+  await saveKanbanState(db, ks);
+  await refresh();
+}
+async function qaGenerateSessions(){
+  const db = await openDB();
+  const ops = await getAll(db,'opportunities');
+  let count = 0;
+  for (const o of ops.slice(0,3)){
+    const sessions = Array.isArray(o.sessions)? o.sessions:[];
+    sessions.push({ planned_at:new Date(Date.now()-3600000).toISOString(), started_at:new Date(Date.now()-1800000).toISOString(), ended_at:new Date().toISOString(), type:'apply', durationMin:25, outcome:'done', note:'QA run' });
+    o.sessions = sessions; await put(db,'opportunities', o); count++;
+  }
+  await refresh();
+}
+async function qaToggleGated(){
+  const db = await openDB();
+  const pref = await get(db,'user_preferences','gated');
+  await put(db,'user_preferences', { key:'gated', value: !(pref?.value ?? true) });
+  await refresh();
+}
+async function qaSimulateCsv(){
+  try {
+    const csv = 'company,role,location,job_url,fit_score\nZen,PM,Remote,https://example.com,80\nYankee,PM,NYC,https://example.com,70\n';
+    const file = new File([csv], 'qa.csv', { type:'text/csv' });
+    openCsvWizard(file);
+  } catch {}
+}
+function qaReport(el, items){
+  el.innerHTML = items.map(i=>`<div class="row" style="justify-content:space-between;"><span>${i.label}</span><span class="badge" style="${i.ok?'color:var(--ok)':'color:var(--danger)'}">${i.ok?'PASS':'FAIL'}</span></div>`).join('');
+}
+async function qaRunValidations(){
+  const out = document.getElementById('qa-results');
+  const db = await openDB();
+  const ops = await getAll(db,'opportunities');
+  const kstate = await getAll(db,'kanban_state');
+  const swOk = await (async()=>{
+    try { const regs = await navigator.serviceWorker.getRegistrations(); return regs && regs.length>0; } catch { return false; }
+  })();
+  const fperVisible = (()=>{ const elx = document.getElementById('view-analytics'); return !!elx; })();
+  const items = [
+    { label:'Service Worker registered', ok: swOk },
+    { label:'Opportunities exist', ok: (ops.length>0) },
+    { label:'Kanban state present', ok: (kstate.length>0) },
+    { label:'Analytics view available', ok: fperVisible },
+  ];
+  qaReport(out, items);
+}
+document.getElementById('qa-reset-db')?.addEventListener('click', qaResetDb);
+document.getElementById('qa-seed-basic')?.addEventListener('click', qaSeedBasic);
+document.getElementById('qa-seed-variants')?.addEventListener('click', qaSeedVariants);
+document.getElementById('qa-generate-sessions')?.addEventListener('click', qaGenerateSessions);
+document.getElementById('qa-toggle-gated')?.addEventListener('click', qaToggleGated);
+document.getElementById('qa-simulate-csv')?.addEventListener('click', qaSimulateCsv);
+document.getElementById('qa-run-validations')?.addEventListener('click', qaRunValidations);
+
 // Triage modal wiring
 let triageCurrentId = null;
 async function openTriage(id){

@@ -119,6 +119,7 @@
       <button id="today-open" title="Today Queue">Today</button>
       <button id="gated-toggle" title="Toggle gated view">Gated</button>
       <button id="onboarding-open" title="Onboarding">Onboard</button>
+      <button id="qa-open" title="QA & Seeding">QA</button>
     </nav>
   </header>
 
@@ -424,6 +425,39 @@
   <footer>
     <span class="muted">Privacy-first. 100% client-side. No trackers. PWA offline.</span>
   </footer>
+
+  <!-- QA Modal -->
+  <div id="qa-modal" class="modal" role="dialog" aria-modal="true" aria-labelledby="qa-title">
+    <div class="sheet">
+      <h3 id="qa-title">QA Mode — Flows & Validation</h3>
+      <div class="rowgrid">
+        <div>
+          <label>Data</label>
+          <div class="row" style="gap:6px; flex-wrap:wrap;">
+            <button class="btn" id="qa-seed-basic">Seed Basic</button>
+            <button class="btn" id="qa-seed-variants">Seed Variants</button>
+            <button class="btn danger" id="qa-reset-db">Reset DB</button>
+          </div>
+        </div>
+        <div>
+          <label>Flows</label>
+          <div class="row" style="gap:6px; flex-wrap:wrap;">
+            <button class="btn" id="qa-simulate-csv">Simulate CSV Import</button>
+            <button class="btn" id="qa-generate-sessions">Generate Sessions</button>
+            <button class="btn" id="qa-toggle-gated">Toggle Gated</button>
+          </div>
+        </div>
+        <div style="grid-column:1 / -1;">
+          <label>Validation</label>
+          <div class="row" style="gap:6px; flex-wrap:wrap;">
+            <button class="btn primary" id="qa-run-validations">Run Checks</button>
+            <button class="btn" id="qa-close">Close</button>
+          </div>
+          <div id="qa-results" class="list" style="margin-top:8px;"></div>
+        </div>
+      </div>
+    </div>
+  </div>
 
   <script type="module" src="./app.js"></script>
   <noscript>JavaScript required for JobFlow.</noscript>
