@@ -14,31 +14,71 @@
       <button data-mode="native" class="active">Native+Tokens</button>
       <button data-mode="pico">Pico (minimal)</button>
       <button data-mode="openprops">Open Props (tokens)</button>
+      <button data-mode="jtp">Job‑Tracker‑Pro</button>
     </div>
   </header>
   <main>
-    <section>
+    <section class="card">
       <h2>Dialog</h2>
       <button id="openDialog">Open Dialog</button>
       <div id="dialog" class="modal"><div class="sheet"><h3>Dialog Title</h3><p>Accessible modal using current tokens.</p><div class="actions"><button id="closeDialog">Close</button></div></div></div>
     </section>
-    <section>
+    <section class="card">
       <h2>Progress Bars</h2>
       <div class="bar"><span style="width:70%"></span></div>
       <div class="bar"><span style="width:40%"></span></div>
     </section>
-    <section>
+    <section class="card">
       <h2>Badges</h2>
       <span class="badge">Honesty: Realistic</span>
       <span class="badge warn">Energy 8/10</span>
     </section>
-    <section>
+    <section class="card">
       <h2>Tabs (static)</h2>
       <div class="tabs">
         <button class="active">Details</button>
         <button>Evidence</button>
       </div>
       <div class="panel">This area simulates tab content.</div>
+    </section>
+    <section class="card">
+      <h2>Kanban Card</h2>
+      <div class="cardk">
+        <div class="title">Figma — PM, AI Collaboration</div>
+        <div class="meta">
+          <span>Fit 82</span>
+          <span>•</span>
+          <span>Prio <span class="prio" style="background:#22C55E"></span> P1</span>
+          <span>•</span>
+          <span class="deadline mid">🟡 2d</span>
+          <button class="btn" style="margin-left:auto;">Triage</button>
+        </div>
+      </div>
+    </section>
+    <section class="card">
+      <h2>Triage Panel</h2>
+      <div class="rowgrid">
+        <div>
+          <div class="badge">Honesty: Realistic</div>
+          <div class="badge warn">Energy 7/10</div>
+        </div>
+        <div class="bar"><span style="width:65%"></span></div>
+      </div>
+      <div style="margin:8px 0;">
+        <span class="chip on">Timing</span>
+        <span class="chip">Culture</span>
+        <span class="chip">Location</span>
+      </div>
+      <div class="actions"><button class="btn danger">Reject</button><button class="btn primary">Plan</button><button class="btn">Force Accept</button></div>
+    </section>
+    <section class="card">
+      <h2>Onboarding Countdown</h2>
+      <div class="bar"><span style="width:33%"></span></div>
+      <div class="row" style="justify-content:space-between;">
+        <div class="badge">Standard</div>
+        <div class="badge">90s</div>
+      </div>
+      <p class="muted">P0 — What’s the struggle? <span class="chip on">no interviews</span> <span class="chip">low energy</span></p>
     </section>
   </main>
   <script>
@@ -55,4 +95,3 @@
   </script>
 </body>
 </html>
-
