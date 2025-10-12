@@ -448,6 +448,13 @@
           </div>
         </div>
         <div style="grid-column:1 / -1;">
+          <label>Guided Demo</label>
+          <div class="row" style="gap:6px; flex-wrap:wrap;">
+            <button class="btn primary" id="qa-run-script">Run Guided Demo</button>
+          </div>
+          <div id="qa-script-log" class="list" style="margin-top:8px;"></div>
+        </div>
+        <div style="grid-column:1 / -1;">
           <label>Validation</label>
           <div class="row" style="gap:6px; flex-wrap:wrap;">
             <button class="btn primary" id="qa-run-validations">Run Checks</button>
@@ -455,6 +462,18 @@
           </div>
           <div id="qa-results" class="list" style="margin-top:8px;"></div>
         </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Reusable Confirm Modal -->
+  <div id="ask-modal" class="modal" role="dialog" aria-modal="true" aria-labelledby="ask-title">
+    <div class="sheet">
+      <h3 id="ask-title">Confirm</h3>
+      <div id="ask-body" class="list" style="margin:6px 0 8px 0;"></div>
+      <div class="actions">
+        <button class="btn" id="ask-cancel">Cancel</button>
+        <button class="btn primary" id="ask-ok">OK</button>
       </div>
     </div>
   </div>

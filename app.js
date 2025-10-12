@@ -792,14 +792,76 @@ async function qaRunValidations(){
     try { const regs = await navigator.serviceWorker.getRegistrations(); return regs && regs.length>0; } catch { return false; }
   })();
   const fperVisible = (()=>{ const elx = document.getElementById('view-analytics'); return !!elx; })();
+  // Validate k-state persistence by moving an item and reverting
+  let dragPersist = false;
+  try {
+    const movable = ops.find(o=>o.status!=='research');
+    if (movable) {
+      const original = movable.status;
+      const target = 'research';
+      const from = movable.status; movable.status = target;
+      const hist = Array.isArray(movable.stage_history)? movable.stage_history:[]; hist.push({ from, to: target, ts: Date.now(), note:'qa:move' }); movable.stage_history = hist;
+      await put(db,'opportunities', movable);
+      const ks1 = await loadKanbanState(db); ks1[original] && (ks1[original].opportunity_ids = ks1[original].opportunity_ids.filter(x=>x!==movable.id));
+      ks1[target] = ks1[target] || { column_id: target, opportunity_ids: []}; ks1[target].opportunity_ids = [movable.id, ...ks1[target].opportunity_ids];
+      await saveKanbanState(db, ks1);
+      const check = await loadKanbanState(db);
+      dragPersist = Array.isArray(check[target]?.opportunity_ids) && check[target].opportunity_ids.includes(movable.id);
+      // revert
+      movable.status = original; await put(db,'opportunities', movable);
+      const ks2 = await loadKanbanState(db); ks2[target].opportunity_ids = ks2[target].opportunity_ids.filter(x=>x!==movable.id);
+      ks2[original] = ks2[original] || { column_id: original, opportunity_ids: []}; ks2[original].opportunity_ids = [movable.id, ...ks2[original].opportunity_ids];
+      await saveKanbanState(db, ks2);
+    }
+  } catch {}
   const items = [
     { label:'Service Worker registered', ok: swOk },
     { label:'Opportunities exist', ok: (ops.length>0) },
     { label:'Kanban state present', ok: (kstate.length>0) },
     { label:'Analytics view available', ok: fperVisible },
+    { label:'Drag/Drop persistence (simulated)', ok: dragPersist }
   ];
   qaReport(out, items);
 }
+
+// Guided demo script runner
+function qaLog(msg, ok){
+  const log = document.getElementById('qa-script-log');
+  if (!log) return;
+  const row = document.createElement('div');
+  row.className = 'row'; row.style.justifyContent = 'space-between';
+  const left = document.createElement('span'); left.textContent = msg;
+  const badge = document.createElement('span'); badge.className = 'badge'; badge.style.color = ok===false? 'var(--danger)' : 'var(--ok)'; badge.textContent = ok===false? 'FAIL' : 'PASS';
+  row.append(left, badge); log.append(row);
+}
+async function qaRunScript(){
+  const log = document.getElementById('qa-script-log'); if (log) log.innerHTML = '';
+  try { await qaSeedVariants(); qaLog('Seed variants', true); } catch { qaLog('Seed variants', false); }
+  try { await qaGenerateSessions(); qaLog('Generate sessions', true); } catch { qaLog('Generate sessions', false); }
+  try { await qaRunValidations(); qaLog('Run validations', true); } catch { qaLog('Run validations', false); }
+  // Export/Import round-trip (JSON in-memory)
+  try {
+    const db = await openDB();
+    const snapshot = {
+      opportunities: await getAll(db,'opportunities'),
+      qualification_reviews: await getAll(db,'qualification_reviews'),
+      profile: await get(db,'profile','profile'),
+      user_preferences: await getAll(db,'user_preferences'),
+      kanban_state: await getAll(db,'kanban_state')
+    };
+    await new Promise((res,rej)=>{ const req = indexedDB.deleteDatabase(DB_NAME); req.onsuccess=()=>res(); req.onerror=()=>rej(req.error); });
+    const db2 = await openDB();
+    if (snapshot.profile) await put(db2,'profile', snapshot.profile);
+    if (snapshot.opportunities?.length) await bulkPut(db2,'opportunities', snapshot.opportunities);
+    if (snapshot.qualification_reviews?.length) await bulkPut(db2,'qualification_reviews', snapshot.qualification_reviews);
+    if (snapshot.user_preferences?.length) await bulkPut(db2,'user_preferences', snapshot.user_preferences);
+    if (snapshot.kanban_state?.length) await bulkPut(db2,'kanban_state', snapshot.kanban_state);
+    const countAfter = (await getAll(db2,'opportunities')).length;
+    qaLog('Export/Import round-trip', countAfter === (snapshot.opportunities?.length||0));
+    await refresh();
+  } catch { qaLog('Export/Import round-trip', false); }
+}
+document.getElementById('qa-run-script')?.addEventListener('click', qaRunScript);
 document.getElementById('qa-reset-db')?.addEventListener('click', qaResetDb);
 document.getElementById('qa-seed-basic')?.addEventListener('click', qaSeedBasic);
 document.getElementById('qa-seed-variants')?.addEventListener('click', qaSeedVariants);
@@ -886,7 +948,7 @@ document.getElementById('triage-plan')?.addEventListener('click', async ()=>{
     const axes = ['comm','pace','feedback','collab'];
     const diverges = axes.some(ax => typeof dims[ax]==='number' && typeof ws[ax]==='number' && Math.abs(dims[ax]-ws[ax])>=3);
     if (diverges) {
-      const ok = window.confirm('Heads up: culture signals differ from your stated vibe by ≥3 on at least one axis. Do you want to nudge your vibe axes by 1 toward this role for future triage?');
+      const ok = await askConfirm('Culture mismatch', 'Heads up: culture signals differ from your stated vibe by ≥3 on at least one axis. Nudge your vibe axes by 1 toward this role for future triage?', 'Nudge', 'Skip');
       if (ok) {
         const next = { ...profile };
         next.work_style = { ...ws };
@@ -988,7 +1050,7 @@ document.getElementById('discovery-show-all')?.addEventListener('change', async 
         const profile = await get(db,'profile','profile') || { key:'profile', gates:{ min_fit:70, min_energy:7 } };
         const cur = Number(profile?.gates?.min_fit||70);
         const proposed = Math.max(50, cur - 5);
-        const ok = window.confirm(`You often view gated items. Lower Minimum Fit gate from ${cur}% to ${proposed}%? (You can always change this in Profile.)`);
+        const ok = await askConfirm('Adjust Gate', `You often view gated items. Lower Minimum Fit gate from ${cur}% to ${proposed}%? You can change this anytime in Profile.`, `Lower to ${proposed}%`, 'Keep Current');
         if (ok) {
           profile.gates = { ...(profile.gates||{}), min_fit: proposed };
           await put(db,'profile', { ...profile, key:'profile' });
