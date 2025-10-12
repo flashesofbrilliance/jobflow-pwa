@@ -493,6 +493,21 @@ function renderAnalytics(opps, reviews) {
   const fper = appliedInWin.length? Math.round((appliedNoInterview.length / appliedInWin.length)*100): 0;
   const fperLine = el('div',{}, el('div',{}, `FPER (28d): ${fper}%  •  Applied ${appliedInWin.length}  •  No interview ${appliedNoInterview.length}`), el('div',{class:'bar'}, el('span',{style:`width:${fper}%`})));
   funnel.append(el('div', {style:'margin-top:8px;'}, fperLine));
+  // Split FPER by accept type (gated vs force-accept)
+  const hasForce = (o)=> Array.isArray(o.stage_history) && o.stage_history.some(h=> typeof h.note==='string' && h.note.startsWith('force:'));
+  const appliedGated = appliedInWin.filter(o=> !hasForce(o));
+  const appliedForce = appliedInWin.filter(o=> hasForce(o));
+  const noIntGated = appliedGated.filter(o=>!o.interviewed_at || (!inWindow(o.interviewed_at)));
+  const noIntForce = appliedForce.filter(o=>!o.interviewed_at || (!inWindow(o.interviewed_at)));
+  const fperGated = appliedGated.length? Math.round((noIntGated.length/appliedGated.length)*100):0;
+  const fperForce = appliedForce.length? Math.round((noIntForce.length/appliedForce.length)*100):0;
+  const splitWrap = el('div', {style:'margin-top:6px;'},
+    el('div',{}, `Gated FPER: ${fperGated}%  •  Applied ${appliedGated.length}  •  No interview ${noIntGated.length}`),
+    el('div',{class:'bar'}, el('span',{style:`width:${fperGated}%`})) ,
+    el('div',{}, `Force‑Accept FPER: ${fperForce}%  •  Applied ${appliedForce.length}  •  No interview ${noIntForce.length}`),
+    el('div',{class:'bar'}, el('span',{style:`width:${fperForce}%`}))
+  );
+  funnel.append(splitWrap);
 
   const objCounts = {};
   reviews.filter(r=>r.decision==='Reject').forEach(r => r.objections.forEach(o => objCounts[o]=(objCounts[o]||0)+1));
@@ -777,6 +792,27 @@ document.getElementById('triage-plan')?.addEventListener('click', async ()=>{
   const dur = durSel==='custom' ? (Number(document.getElementById('triage-duration-custom').value)||25) : Number(durSel);
   const whenStr = document.getElementById('triage-when').value;
   const start = whenStr ? new Date(whenStr) : new Date(Date.now()+60*60000);
+  // Kairos: culture mismatch prompt — if opp.culture_dims diverges from profile.work_style by >=3 on any axis
+  try {
+    const profile = await get(db,'profile','profile');
+    const dims = opp.culture_dims || {};
+    const ws = (profile?.work_style)||{};
+    const axes = ['comm','pace','feedback','collab'];
+    const diverges = axes.some(ax => typeof dims[ax]==='number' && typeof ws[ax]==='number' && Math.abs(dims[ax]-ws[ax])>=3);
+    if (diverges) {
+      const ok = window.confirm('Heads up: culture signals differ from your stated vibe by ≥3 on at least one axis. Do you want to nudge your vibe axes by 1 toward this role for future triage?');
+      if (ok) {
+        const next = { ...profile };
+        next.work_style = { ...ws };
+        axes.forEach(ax => {
+          if (typeof dims[ax]==='number' && typeof ws[ax]==='number') {
+            next.work_style[ax] = ws[ax] + Math.sign(dims[ax]-ws[ax]);
+          }
+        });
+        await put(db,'profile', { ...next, key:'profile' });
+      }
+    }
+  } catch {}
   opp.next_action = { type, durationMin: dur, planned_at: start.toISOString(), planned_source:'triage' };
   await put(db,'opportunities', opp);
   // Offer calendar add: download ICS and open Google Cal link
@@ -852,7 +888,29 @@ document.getElementById('discovery-refresh')?.addEventListener('click', async ()
   const db = await openDB(); const opps = await getAll(db,'opportunities'); await renderDiscoveryQueue(opps);
 });
 document.getElementById('discovery-show-all')?.addEventListener('change', async ()=>{
-  const db = await openDB(); const opps = await getAll(db,'opportunities'); await renderDiscoveryQueue(opps);
+  const db = await openDB();
+  // Kairos: track show-all usage and offer gate adjustment if frequent
+  try {
+    const pref = await get(db,'meta','kairos_show_all') || { key:'kairos_show_all', values:[] };
+    if (document.getElementById('discovery-show-all').checked) {
+      const now = Date.now();
+      const vals = Array.isArray(pref.values)? pref.values:[];
+      const recent = [now, ...vals.filter(ts => (now-ts) <= 7*24*3600*1000)].slice(0, 10);
+      await put(db,'meta', { key:'kairos_show_all', values: recent });
+      const count7d = recent.length;
+      if (count7d >= 3) {
+        const profile = await get(db,'profile','profile') || { key:'profile', gates:{ min_fit:70, min_energy:7 } };
+        const cur = Number(profile?.gates?.min_fit||70);
+        const proposed = Math.max(50, cur - 5);
+        const ok = window.confirm(`You often view gated items. Lower Minimum Fit gate from ${cur}% to ${proposed}%? (You can always change this in Profile.)`);
+        if (ok) {
+          profile.gates = { ...(profile.gates||{}), min_fit: proposed };
+          await put(db,'profile', { ...profile, key:'profile' });
+        }
+      }
+    }
+  } catch {}
+  const opps = await getAll(db,'opportunities'); await renderDiscoveryQueue(opps);
 });
 document.getElementById('discovery-list')?.addEventListener('click', (e)=>{
   const btn = e.target.closest('button[data-act="triage"]'); if (!btn) return; const id = Number(btn.getAttribute('data-id')); if (id) openTriage(id);
