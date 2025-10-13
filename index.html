@@ -95,6 +95,88 @@
     .bar > span { display:block; height:100%; background:var(--accent); }
     footer { padding: var(--space-3) var(--space-4); color:var(--sub); border-top:1px solid var(--border); }
     @media (max-width: 1060px) { .rowgrid { grid-template-columns: 1fr; } }
+    /* Phase 1: Focus Bar & Dharma UI */
+    .focus-bar { 
+      background: linear-gradient(135deg, #1e293b, #0f172a); 
+      border-bottom: 2px solid var(--accent); 
+      padding: var(--space-3) var(--space-4);
+      position: sticky; top: 0; z-index: 10;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+    }
+    .focus-content { 
+      display: flex; align-items: center; justify-content: space-between; 
+      max-width: 1200px; margin: 0 auto;
+    }
+    .focus-title { 
+      font-weight: 600; color: var(--accent); font-size: 16px;
+    }
+    .focus-filters {
+      display: flex; gap: var(--space-2); align-items: center; flex-wrap: wrap;
+    }
+    .focus-filter { 
+      background: var(--badge); color: var(--accent); padding: 4px 8px; 
+      border-radius: 12px; font-size: 11px; border: 1px solid var(--accent);
+    }
+    .focus-actions { display: flex; gap: var(--space-2); }
+    .focus-drawer {
+      background: var(--panel); border-top: 1px solid var(--border);
+      padding: var(--space-3); margin-top: var(--space-2);
+    }
+    .drawer-title { font-weight: 600; margin-bottom: var(--space-2); }
+    .hidden-counts { display: flex; flex-direction: column; gap: var(--space-1); }
+    .hidden-count { 
+      display: flex; justify-content: space-between; align-items: center;
+      padding: var(--space-1) var(--space-2); background: var(--badge); border-radius: 6px;
+    }
+    .commitment-intro { margin-bottom: var(--space-4); }
+    .culture-section { margin-top: var(--space-4); }
+    .culture-ranges { display: flex; flex-direction: column; gap: var(--space-2); }
+    .culture-range { 
+      display: flex; align-items: center; gap: var(--space-2);
+    }
+    .culture-range span { width: 200px; font-size: 12px; }
+    .culture-range input[type="range"] { flex: 1; }
+    .diagnostics-content { margin: var(--space-3) 0; }
+    .console-status { 
+      padding: var(--space-2); background: var(--badge); border-radius: 8px; 
+      margin-bottom: var(--space-3);
+    }
+    .diagnostics-test { 
+      display: flex; justify-content: space-between; align-items: center;
+      padding: var(--space-2) 0; border-bottom: 1px solid var(--border);
+    }
+    .diagnostics-test:last-child { border-bottom: none; }
+    .evidence-section {
+      background: var(--badge); padding: var(--space-3); border-radius: 8px;
+      margin: var(--space-2) 0;
+    }
+    .evidence-bullets { margin: var(--space-2) 0; }
+    .evidence-bullet {
+      display: flex; align-items: flex-start; gap: var(--space-2);
+      margin: var(--space-1) 0; font-size: 13px; color: var(--sub);
+    }
+    .evidence-bullet::before { content: '•'; color: var(--warn); font-weight: bold; }
+    .nearest-fit {
+      background: var(--panel); padding: var(--space-2); border-radius: 6px;
+      margin-top: var(--space-2); border: 1px solid var(--border);
+    }
+    .vote-buttons { 
+      display: flex; gap: var(--space-2); margin-top: var(--space-2);
+    }
+    .vote-btn {
+      padding: 6px 12px; border: 1px solid var(--border); background: var(--badge);
+      color: var(--text); border-radius: 6px; cursor: pointer; font-size: 12px;
+    }
+    .vote-btn:hover { background: var(--panel); }
+    .vote-btn.helpful { border-color: var(--ok); color: var(--ok); }
+    .vote-btn.not-helpful { border-color: var(--danger); color: var(--danger); }
+    /* Outcome tracking */
+    .outcome-timeline { margin: var(--space-2) 0; }
+    .timeline-event {
+      display: flex; justify-content: space-between; align-items: center;
+      padding: var(--space-1) var(--space-2); margin: var(--space-1) 0;
+      background: var(--badge); border-radius: 6px; font-size: 12px;
+    }
   </style>
   <link rel="icon" href="icons/192.png">
   <link rel="apple-touch-icon" href="icons/192.png">
@@ -120,8 +202,28 @@
       <button id="gated-toggle" title="Toggle gated view">Gated</button>
       <button id="onboarding-open" title="Onboarding">Onboard</button>
       <button id="qa-open" title="QA & Seeding">QA</button>
+      <button id="diagnostics-open" title="Diagnostics">Diagnostics</button>
     </nav>
   </header>
+  
+  <!-- Focus Bar (pinned above Discovery) -->
+  <div id="focus-bar" class="focus-bar hidden">
+    <div class="focus-content">
+      <div class="focus-title">🎯 Dharma Path Locked</div>
+      <div id="focus-filters" class="focus-filters"></div>
+      <div class="focus-actions">
+        <button class="btn" id="focus-drawer-toggle">Hidden by design</button>
+        <button class="btn" id="focus-peek-btn" disabled>Peek outside (used today)</button>
+      </div>
+    </div>
+    <div id="focus-drawer" class="focus-drawer hidden">
+      <div class="drawer-content">
+        <div class="drawer-title">Hidden by Design — Compassionate Constraints</div>
+        <div id="hidden-counts" class="hidden-counts"></div>
+        <button class="btn" id="drawer-close">Close</button>
+      </div>
+    </div>
+  </div>
 
   <main>
     <section id="view-discovery" class="discovery">
@@ -399,6 +501,26 @@
           <textarea id="qm-brief"></textarea>
         </div>
       </div>
+      
+      <!-- Brutal Honesty Receipts Section -->
+      <div id="evidence-section" class="evidence-section hidden">
+        <div class="row" style="justify-content: space-between; align-items: center;">
+          <h4 style="margin: 0;">Compassionate Candor — Truth with Receipts</h4>
+          <div class="muted" style="font-size: 11px;">Right View reduces suffering</div>
+        </div>
+        <div class="evidence-bullets" id="evidence-bullets">
+          <!-- Evidence bullets will be populated here -->
+        </div>
+        <div id="nearest-fit" class="nearest-fit hidden">
+          <div class="muted" style="font-size: 11px; margin-bottom: 4px;">Why this, not that:</div>
+          <div id="nearest-fit-content"></div>
+        </div>
+        <div class="vote-buttons">
+          <button class="vote-btn" id="vote-helpful">Helpful</button>
+          <button class="vote-btn" id="vote-not-helpful">Not Helpful</button>
+        </div>
+      </div>
+      
       <div class="actions">
         <button class="btn" id="qm-cancel">Close (Esc)</button>
         <button class="btn primary" id="qm-save">Save</button>
@@ -418,6 +540,139 @@
         <button class="btn" id="csvm-back" disabled>Back</button>
         <button class="btn primary" id="csvm-next">Next</button>
         <button class="btn primary" id="csvm-import" style="display:none;">Import Selected</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Commitment Ceremony Modal -->
+  <div id="commitment-modal" class="modal" role="dialog" aria-modal="true" aria-labelledby="commit-title">
+    <div class="sheet">
+      <h3 id="commit-title">Choose Your Dharma Path</h3>
+      <div class="commitment-intro">
+        <p class="muted">Right Effort begins with focus — protect energy to discover the right work</p>
+        <p>Constrain inputs to deepen outputs. Lock your search parameters to reduce decision fatigue and increase conviction.</p>
+      </div>
+      <div class="rowgrid">
+        <div>
+          <label>Industries (select 2-3 max)</label>
+          <div id="commit-industries" class="chips"></div>
+        </div>
+        <div>
+          <label>Stages (select preferred ones)</label>
+          <div id="commit-stages" class="chips"></div>
+        </div>
+        <div>
+          <label>Energy Threshold (1-10)</label>
+          <input type="range" id="commit-energy" min="1" max="10" value="6">
+          <div class="muted">Below <span id="energy-display">6</span>/10 will be hidden</div>
+        </div>
+        <div>
+          <label>Fit Threshold (%)</label>
+          <input type="range" id="commit-fit" min="50" max="100" value="70">
+          <div class="muted">Below <span id="fit-display">70</span>% will be hidden</div>
+        </div>
+      </div>
+      <div class="culture-section">
+        <label>Culture Bands (acceptable ranges)</label>
+        <div class="culture-ranges">
+          <div class="culture-range">
+            <span>Communication: Formal ↔ Informal</span>
+            <input type="range" id="commit-comm-min" min="1" max="10" value="4">
+            <input type="range" id="commit-comm-max" min="1" max="10" value="8">
+          </div>
+          <div class="culture-range">
+            <span>Pace: Chill ↔ Intense</span>
+            <input type="range" id="commit-pace-min" min="1" max="10" value="4">
+            <input type="range" id="commit-pace-max" min="1" max="10" value="8">
+          </div>
+          <div class="culture-range">
+            <span>Feedback: Kind ↔ Blunt</span>
+            <input type="range" id="commit-feedback-min" min="1" max="10" value="4">
+            <input type="range" id="commit-feedback-max" min="1" max="10" value="8">
+          </div>
+          <div class="culture-range">
+            <span>Collaboration: Independent ↔ Collaborative</span>
+            <input type="range" id="commit-collab-min" min="1" max="10" value="4">
+            <input type="range" id="commit-collab-max" min="1" max="10" value="8">
+          </div>
+        </div>
+      </div>
+      <div class="actions">
+        <button class="btn" id="commit-cancel">Maybe Later</button>
+        <button class="btn primary" id="commit-save">Lock Focus & Begin</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Diagnostics Modal -->
+  <div id="diagnostics-modal" class="modal" role="dialog" aria-modal="true" aria-labelledby="diag-title">
+    <div class="sheet">
+      <h3 id="diag-title">System Diagnostics</h3>
+      <div class="diagnostics-content">
+        <div class="console-status">
+          <div class="row" style="justify-content: space-between; align-items: center;">
+            <span>Console Clean</span>
+            <span id="console-badge" class="badge">CHECKING...</span>
+          </div>
+        </div>
+        <div id="diagnostics-results" class="list"></div>
+      </div>
+      <div class="actions">
+        <button class="btn" id="diag-close">Close</button>
+        <button class="btn primary" id="diag-run">Run All Tests</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Outcomes Detail Modal -->
+  <div id="outcome-modal" class="modal" role="dialog" aria-modal="true" aria-labelledby="outcome-title">
+    <div class="sheet">
+      <h3 id="outcome-title">Update Outcome</h3>
+      <div class="rowgrid">
+        <div>
+          <label>Status</label>
+          <select id="outcome-status">
+            <option value="applied">Applied</option>
+            <option value="interviewing">Interviewing</option>
+            <option value="offer">Offer</option>
+            <option value="rejected">Rejected</option>
+            <option value="ghosted">Ghosted</option>
+            <option value="withdrawn">Withdrawn</option>
+          </select>
+        </div>
+        <div>
+          <label>Time Spent (minutes)</label>
+          <input type="number" id="outcome-time" min="0" placeholder="e.g. 45">
+        </div>
+        <div>
+          <label>Rejection Reason (if applicable)</label>
+          <select id="outcome-rejection">
+            <option value="">-- Select if rejected --</option>
+            <option value="skills_gap">Skills Gap</option>
+            <option value="culture_mismatch">Culture Mismatch</option>
+            <option value="experience">Experience Level</option>
+            <option value="overqualified">Overqualified</option>
+            <option value="timing">Timing</option>
+            <option value="other">Other</option>
+          </select>
+        </div>
+        <div>
+          <label>Would Apply Again?</label>
+          <div class="row">
+            <label><input type="radio" name="apply-again" value="true"> Yes</label>
+            <label><input type="radio" name="apply-again" value="false"> No</label>
+            <label><input type="radio" name="apply-again" value=""> N/A</label>
+          </div>
+        </div>
+        <div>
+          <label>Energy Level (1-10)</label>
+          <input type="range" id="outcome-energy" min="1" max="10" value="5">
+          <div class="muted">Actual energy: <span id="outcome-energy-display">5</span>/10</div>
+        </div>
+      </div>
+      <div class="actions">
+        <button class="btn" id="outcome-cancel">Cancel</button>
+        <button class="btn primary" id="outcome-save">Save Outcome</button>
       </div>
     </div>
   </div>
