@@ -28,3 +28,5 @@ jobs:
         with:
           name: runtime-report
           path: runtime-report.json
+      - name: Playwright smoke tests
+        run: npx playwright test -c playwright.config.js
