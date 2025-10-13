@@ -198,6 +198,7 @@
       <button id="density-toggle" title="Toggle density">Compact</button>
       <button id="stages-edit" title="Edit application stages">Edit Stages</button>
       <button id="profile-open" title="Profile & Gates">Profile</button>
+      <button id="frame-open" title="Frame Storming">Frame</button>
       <button id="today-open" title="Today Queue">Today</button>
       <button id="gated-toggle" title="Toggle gated view">Gated</button>
       <button id="onboarding-open" title="Onboarding">Onboard</button>
@@ -718,6 +719,31 @@
           </div>
           <div id="qa-results" class="list" style="margin-top:8px;"></div>
         </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Frame Storming Modal (MVP) -->
+  <div id="frame-modal" class="modal" role="dialog" aria-modal="true" aria-labelledby="fm-title">
+    <div class="sheet">
+      <h3 id="fm-title">Frame Storming</h3>
+      <div class="list" style="gap:10px;">
+        <div>
+          <label>P0 — What’s your current frame?</label>
+          <input type="text" id="fm-elicit" placeholder="e.g., No interviews; overwhelmed; unclear target">
+        </div>
+        <div>
+          <label>P1 — Distortions (pick any)</label>
+          <div id="fm-distortions" class="chips"></div>
+        </div>
+        <div>
+          <label>P2 — Reframe (one line)</label>
+          <input type="text" id="fm-reframe" placeholder="e.g., Ship 1 quality apply/day; calibrate gates; focus on top-3 segments">
+        </div>
+      </div>
+      <div class="actions">
+        <button class="btn" id="frame-cancel">Cancel</button>
+        <button class="btn primary" id="frame-save">Save</button>
       </div>
     </div>
   </div>

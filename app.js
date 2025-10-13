@@ -893,6 +893,32 @@ document.getElementById('profile-save')?.addEventListener('click', async ()=>{
   document.getElementById('profile-modal')?.classList.remove('show');
 });
 
+// Frame Storming (MVP)
+document.getElementById('frame-open')?.addEventListener('click', async ()=>{
+  const db = await openDB();
+  const p = await get(db,'profile','profile');
+  document.getElementById('fm-elicit').value = '';
+  document.getElementById('fm-reframe').value = '';
+  const ds = ['ego','fear','comparison','catastrophizing','all-or-nothing','shoulds'];
+  const box = document.getElementById('fm-distortions');
+  if (box) { box.innerHTML=''; ds.forEach(d=>{ const s = document.createElement('span'); s.className='chip'; s.textContent=d; s.onclick=()=>s.classList.toggle('on'); box.append(s); }); }
+  document.getElementById('frame-modal')?.classList.add('show');
+});
+document.getElementById('frame-cancel')?.addEventListener('click', ()=> document.getElementById('frame-modal')?.classList.remove('show'));
+document.getElementById('frame-save')?.addEventListener('click', async ()=>{
+  const db = await openDB();
+  const elicit = document.getElementById('fm-elicit').value||'';
+  const reframe = document.getElementById('fm-reframe').value||'';
+  const chips = Array.from(document.querySelectorAll('#fm-distortions .chip.on')).map(x=>x.textContent);
+  const prof = await get(db,'profile','profile') || { key:'profile' };
+  prof.current_frame = { id: crypto.randomUUID(), title: elicit||'frame', summary: `${elicit} → ${reframe}`, committed_at: new Date().toISOString(), distortions: chips };
+  await put(db,'profile', { ...prof, key:'profile' });
+  try {
+    await put(db,'reflections', { id: crypto.randomUUID(), type:'frame_storm', ts: Date.now(), summary: prof.current_frame.summary, details: { distortions: chips } });
+  } catch {}
+  document.getElementById('frame-modal')?.classList.remove('show');
+});
+
 // === QA Mode ===
 document.getElementById('qa-open')?.addEventListener('click', ()=> document.getElementById('qa-modal')?.classList.add('show'));
 document.getElementById('qa-close')?.addEventListener('click', ()=> document.getElementById('qa-modal')?.classList.remove('show'));
@@ -955,14 +981,14 @@ async function qaExportCsv(){
   try {
     const db = await openDB();
     const ops = await getAll(db,'opportunities');
-    const headers = ['company','role','segment','location','job_url','fit_score','deadline','posted_at','notes'];
+    const headers = ['company','role','segment','location','job_url','fit_score','energy_score','total_fit','deadline','posted_at','honesty_label','barriers','notes'];
     const esc = (v)=>{
       const s = (v==null)? '' : String(v);
       if (s.includes('"') || s.includes(',') || s.includes('\n')) return '"'+s.replace(/"/g,'""')+'"';
       return s;
     };
     const rows = [headers.join(',')].concat(ops.map(o=>[
-      esc(o.company||''), esc(o.role||''), esc(o.segment||''), esc(o.location||''), esc(o.job_url||''), esc(o.fit_score??''), esc(o.deadline||''), esc(o.posted_at||''), esc(o.notes||'')
+      esc(o.company||''), esc(o.role||''), esc(o.segment||''), esc(o.location||''), esc(o.job_url||''), esc(o.fit_score??''), esc(o.energy_score??''), esc(o.total_fit??''), esc(o.deadline||''), esc(o.posted_at||''), esc(o.honesty_label||''), esc((o.barriers||[]).join('; ')), esc(o.notes||'')
     ].join(',')));
     const blob = new Blob([rows.join('\n')], { type:'text/csv' });
     const url = URL.createObjectURL(blob);
