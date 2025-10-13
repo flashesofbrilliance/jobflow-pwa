@@ -780,6 +780,24 @@ async function qaSimulateCsv(){
     openCsvWizard(file);
   } catch {}
 }
+async function qaExportCsv(){
+  try {
+    const db = await openDB();
+    const ops = await getAll(db,'opportunities');
+    const headers = ['company','role','segment','location','job_url','fit_score','deadline','posted_at','notes'];
+    const esc = (v)=>{
+      const s = (v==null)? '' : String(v);
+      if (s.includes('"') || s.includes(',') || s.includes('\n')) return '"'+s.replace(/"/g,'""')+'"';
+      return s;
+    };
+    const rows = [headers.join(',')].concat(ops.map(o=>[
+      esc(o.company||''), esc(o.role||''), esc(o.segment||''), esc(o.location||''), esc(o.job_url||''), esc(o.fit_score??''), esc(o.deadline||''), esc(o.posted_at||''), esc(o.notes||'')
+    ].join(',')));
+    const blob = new Blob([rows.join('\n')], { type:'text/csv' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a'); a.href = url; a.download = 'jobflow_export.csv'; a.click(); URL.revokeObjectURL(url);
+  } catch {}
+}
 function qaReport(el, items){
   el.innerHTML = items.map(i=>`<div class="row" style="justify-content:space-between;"><span>${i.label}</span><span class="badge" style="${i.ok?'color:var(--ok)':'color:var(--danger)'}">${i.ok?'PASS':'FAIL'}</span></div>`).join('');
 }
@@ -868,6 +886,7 @@ document.getElementById('qa-seed-variants')?.addEventListener('click', qaSeedVar
 document.getElementById('qa-generate-sessions')?.addEventListener('click', qaGenerateSessions);
 document.getElementById('qa-toggle-gated')?.addEventListener('click', qaToggleGated);
 document.getElementById('qa-simulate-csv')?.addEventListener('click', qaSimulateCsv);
+document.getElementById('qa-export-csv')?.addEventListener('click', qaExportCsv);
 document.getElementById('qa-run-validations')?.addEventListener('click', qaRunValidations);
 
 // Triage modal wiring
@@ -948,7 +967,7 @@ document.getElementById('triage-plan')?.addEventListener('click', async ()=>{
     const axes = ['comm','pace','feedback','collab'];
     const diverges = axes.some(ax => typeof dims[ax]==='number' && typeof ws[ax]==='number' && Math.abs(dims[ax]-ws[ax])>=3);
     if (diverges) {
-      const ok = await askConfirm('Culture mismatch', 'Heads up: culture signals differ from your stated vibe by ≥3 on at least one axis. Nudge your vibe axes by 1 toward this role for future triage?', 'Nudge', 'Skip');
+      const ok = await askConfirm('Culture mismatch', 'Heads up: culture signals differ from your stated vibe by ≥3 on at least one axis. Nudge your vibe axes by 1 toward this role for future triage?', 'Nudge', 'Skip', { prefKey:'nudge_culture_mismatch', defaultResult:false });
       if (ok) {
         const next = { ...profile };
         next.work_style = { ...ws };
@@ -1050,7 +1069,7 @@ document.getElementById('discovery-show-all')?.addEventListener('change', async 
         const profile = await get(db,'profile','profile') || { key:'profile', gates:{ min_fit:70, min_energy:7 } };
         const cur = Number(profile?.gates?.min_fit||70);
         const proposed = Math.max(50, cur - 5);
-        const ok = await askConfirm('Adjust Gate', `You often view gated items. Lower Minimum Fit gate from ${cur}% to ${proposed}%? You can change this anytime in Profile.`, `Lower to ${proposed}%`, 'Keep Current');
+        const ok = await askConfirm('Adjust Gate', `You often view gated items. Lower Minimum Fit gate from ${cur}% to ${proposed}%? You can change this anytime in Profile.`, `Lower to ${proposed}%`, 'Keep Current', { prefKey:'nudge_adjust_gate', defaultResult:false });
         if (ok) {
           profile.gates = { ...(profile.gates||{}), min_fit: proposed };
           await put(db,'profile', { ...profile, key:'profile' });
@@ -1063,6 +1082,47 @@ document.getElementById('discovery-show-all')?.addEventListener('change', async 
 document.getElementById('discovery-list')?.addEventListener('click', (e)=>{
   const btn = e.target.closest('button[data-act="triage"]'); if (!btn) return; const id = Number(btn.getAttribute('data-id')); if (id) openTriage(id);
 });
+
+// Reusable in-app confirm modal
+function askConfirm(title, message, okText='OK', cancelText='Cancel', opts={}){
+  return new Promise(async resolve => {
+    const modal = document.getElementById('ask-modal');
+    const t = document.getElementById('ask-title');
+    const b = document.getElementById('ask-body');
+    const ok = document.getElementById('ask-ok');
+    const cancel = document.getElementById('ask-cancel');
+    const dont = document.getElementById('ask-dont');
+    const prefKey = opts.prefKey ? String(opts.prefKey) : '';
+    const defaultResult = !!opts.defaultResult;
+    try {
+      if (prefKey) {
+        const db = await openDB();
+        const sup = await get(db,'user_preferences', `${prefKey}_suppress`);
+        if (sup?.value === true) return resolve(defaultResult);
+      }
+    } catch {}
+    if (!modal || !t || !b || !ok || !cancel) return resolve(window.confirm(message));
+    t.textContent = title || 'Confirm';
+    b.textContent = message || '';
+    ok.textContent = okText || 'OK';
+    cancel.textContent = cancelText || 'Cancel';
+    if (dont) dont.checked = false;
+    const cleanup = async (result)=>{
+      ok.onclick = null; cancel.onclick = null;
+      modal.classList.remove('show');
+      try {
+        if (prefKey && dont && dont.checked) {
+          const db = await openDB();
+          await put(db,'user_preferences', { key: `${prefKey}_suppress`, value: true });
+        }
+      } catch {}
+      resolve(result);
+    };
+    ok.onclick = ()=> cleanup(true);
+    cancel.onclick = ()=> cleanup(false);
+    modal.classList.add('show');
+  });
+}
 
 // Culture bars in triage (rendered inline within openTriage)
 
