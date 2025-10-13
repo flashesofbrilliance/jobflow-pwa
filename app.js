@@ -1298,7 +1298,7 @@ document.getElementById('discovery-show-all')?.addEventListener('change', async 
         const profile = await get(db,'profile','profile') || { key:'profile', gates:{ min_fit:70, min_energy:7 } };
         const cur = Number(profile?.gates?.min_fit||70);
         const proposed = Math.max(50, cur - 5);
-        const ok = await askConfirm('Adjust Gate', `You often view gated items. Lower Minimum Fit gate from ${cur}% to ${proposed}%? You can change this anytime in Profile.`, `Lower to ${proposed}%`, 'Keep Current', { prefKey:'nudge_adjust_gate', defaultResult:false });
+        const ok = await askConfirm('Adjust Gate', `You often view gated items. Lower Minimum Fit gate from ${cur}% to ${proposed}%? You can change this anytime in Profile.`, `Lower to ${proposed}%`, 'Keep Current', { prefKey:'nudge_adjust_gate', defaultResult:false, altLabel:'Open Profile', onAlt: async ()=>{ document.getElementById('profile-open')?.click(); } });
         if (ok) {
           profile.gates = { ...(profile.gates||{}), min_fit: proposed };
           await put(db,'profile', { ...profile, key:'profile' });
@@ -1321,6 +1321,7 @@ function askConfirm(title, message, okText='OK', cancelText='Cancel', opts={}){
     const ok = document.getElementById('ask-ok');
     const cancel = document.getElementById('ask-cancel');
     const dont = document.getElementById('ask-dont');
+    const alt = document.getElementById('ask-alt');
     const prefKey = opts.prefKey ? String(opts.prefKey) : '';
     const defaultResult = !!opts.defaultResult;
     try {
@@ -1340,8 +1341,17 @@ function askConfirm(title, message, okText='OK', cancelText='Cancel', opts={}){
     ok.textContent = okText || 'OK';
     cancel.textContent = cancelText || 'Cancel';
     if (dont) dont.checked = false;
+    if (alt) {
+      if (opts.altLabel) {
+        alt.style.display = '';
+        alt.textContent = opts.altLabel;
+      } else {
+        alt.style.display = 'none';
+      }
+    }
     const cleanup = async (result)=>{
       ok.onclick = null; cancel.onclick = null;
+      if (alt) alt.onclick = null;
       modal.classList.remove('show');
       try {
         if (prefKey && dont && dont.checked) {
@@ -1354,6 +1364,12 @@ function askConfirm(title, message, okText='OK', cancelText='Cancel', opts={}){
     };
     ok.onclick = ()=> cleanup(true);
     cancel.onclick = ()=> cleanup(false);
+    if (alt && opts.altLabel) {
+      alt.onclick = async ()=>{
+        try { if (typeof opts.onAlt === 'function') await opts.onAlt(); } catch {}
+        cleanup(false);
+      };
+    }
     modal.classList.add('show');
   });
 }
@@ -2085,6 +2101,16 @@ function renderFocusBar(constraints, hiddenCounts) {
   // Render filters
   const filtersEl = document.getElementById('focus-filters');
   filtersEl.innerHTML = '';
+  // Show current frame summary if available
+  (async ()=>{
+    try {
+      const db = await openDB();
+      const prof = await get(db,'profile','profile');
+      if (prof?.current_frame?.summary) {
+        filtersEl.appendChild(el('span', {class:'focus-filter'}, `Frame: ${prof.current_frame.summary}`));
+      }
+    } catch {}
+  })();
   
   if (constraints.industries?.length) {
     constraints.industries.forEach(industry => {
