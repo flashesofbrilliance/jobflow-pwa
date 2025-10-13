@@ -16,7 +16,9 @@
     "detect:greenhouse": "node scripts/detect-greenhouse.mjs --in=data/companies.txt --out=output/greenhouse_detect.csv",
     "detect:ats": "node scripts/detect-ats.mjs --in=data/companies.txt --out=output/ats_detect.csv",
     "build:targets": "node scripts/build-targets.mjs --gh=output/greenhouse_detect.csv --ats=output/ats_detect.csv --out=output/targets.json",
-    "fetch:combined": "node scripts/fetch-all.mjs --targets=output/targets.json --boards-file=data/vc-boards.json --delta-only --state=output/fetch_state.json"
+    "fetch:combined": "node scripts/fetch-all.mjs --targets=output/targets.json --boards-file=data/vc-boards.json --delta-only --state=output/fetch_state.json",
+    "runtime:check": "node scripts/runtime-check.js dist index.html runtime-report.json",
+    "ci:runtime": "npm run build && node scripts/runtime-check.js dist index.html runtime-report.json"
   },
   "dependencies": {
     "idb": "^7.1.1"
